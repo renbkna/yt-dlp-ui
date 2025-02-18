@@ -40,8 +40,8 @@ const YTDLPPage = () => {
     writeComments: false,
     writeThumbnail: false,
     writeInfoJson: false,
-    cookies: false,
-    sponsorblock: true,
+    cookies: true,
+    sponsorblock: false,
     chaptersFromComments: false,
   })
 

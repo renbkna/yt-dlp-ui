@@ -90,15 +90,6 @@ cd yt-dlp-ui
 
    This command uses the `concurrently` package to start both the FastAPI back-end (from the parent directory) and the React front-end (powered by Vite) together. The FastAPI server will run on port 8000, and the React app will be available (typically) at [http://localhost:5173](http://localhost:5173).
 
-## Troubleshooting: Cookies and 404/Unauthorized Errors
-
-If you encounter **404**, **Unauthorized**, or **Forbidden** errors during downloads—especially for high-quality or age-restricted content—it might be due to geo-restrictions, age restrictions, or other authentication issues imposed by the source. To resolve this, create a `cookie.txt` file from your browser (using an extension or manual export) and update your configuration:
-
-1. Place your `cookie.txt` file in the proper directory.
-2. Uncomment or update the `"cookiefile": "path/to/your/cookies.txt"` line in the back-end configuration (inside the `get_ytdlp_options` function in your FastAPI code).
-
-Using cookies can help bypass restrictions for high-quality streams that might otherwise require authentication.
-
 ## Audio Extraction vs. Native Audio Download
 
 The UI offers two approaches for obtaining audio-only files:
