@@ -1,121 +1,254 @@
-import React, { useState, useEffect } from 'react'
-import { Label } from '@/components/ui/label'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { DownloadOptions, VideoFormat } from '@/types'
+import { useState, useMemo } from "react"
+import { DownloadOptions, VideoFormat } from "@/types"
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Input } from "@/components/ui/input"
+import { Search, Film, Filter, X, Check, HelpCircle, Download } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
-interface ExtendedVideoFormat extends VideoFormat {
-  fps?: number
-  filesize_approx?: number
-}
-
-function getFormatLabel(format: ExtendedVideoFormat): string {
-  const parts: string[] = []
-  if (format.resolution) parts.push(format.resolution)
-  if (format.ext) parts.push(`(${format.ext})`)
-  if (format.fps !== undefined) parts.push(`${format.fps}fps`)
-  if (format.vcodec && format.vcodec !== 'none') parts.push(`vcodec:${format.vcodec}`)
-  if (format.acodec && format.acodec !== 'none') parts.push(`acodec:${format.acodec}`)
-  if (format.format_note) parts.push(format.format_note)
-  if (format.filesize) {
-    const sizeMB = (format.filesize / (1024 * 1024)).toFixed(1)
-    parts.push(`${sizeMB}MB`)
-  } else if (format.filesize_approx !== undefined) {
-    const sizeMB = (format.filesize_approx / (1024 * 1024)).toFixed(1)
-    parts.push(`~${sizeMB}MB`)
-  }
-  return parts.join(' - ') || 'Unknown Format'
-}
-
-function groupByResolution(formats: ExtendedVideoFormat[]): Record<string, ExtendedVideoFormat[]> {
-  return formats.reduce((acc, format) => {
-    const res = format.resolution || 'Unknown'
-    if (!acc[res]) acc[res] = []
-    acc[res].push(format)
-    return acc
-  }, {} as Record<string, ExtendedVideoFormat[]>)
-}
-
-export interface VideoFormatSelectorProps {
+interface VideoFormatSelectorProps {
   formats: VideoFormat[]
   downloadOptions: DownloadOptions
-  updateDownloadOption: (key: keyof DownloadOptions, value: string | number | boolean) => void
+  updateDownloadOption: (key: keyof DownloadOptions, value: string | boolean | unknown) => void
 }
 
-export const VideoFormatSelector: React.FC<VideoFormatSelectorProps> = React.memo(
-  ({ formats, downloadOptions, updateDownloadOption }) => {
-    const extendedFormats = formats as ExtendedVideoFormat[]
-    const [outerTab, setOuterTab] = useState<'video' | 'audio' | 'other'>('video')
-    const [innerTab, setInnerTab] = useState<string>('')
+export function VideoFormatSelector({ 
+  formats, 
+  downloadOptions, 
+  updateDownloadOption 
+}: VideoFormatSelectorProps) {
+  const [searchTerm, setSearchTerm] = useState("")
+  const [showAudioOnly, setShowAudioOnly] = useState(false)
+  const [showVideoOnly, setShowVideoOnly] = useState(false)
+  
+  // Function to format file size
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return "Unknown"
+    
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+    if (bytes === 0) return '0 Byte'
+    const i = Math.floor(Math.log(bytes) / Math.log(1024))
+    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i]
+  }
+  
+  // Filter and sort formats
+  const filteredFormats = useMemo(() => {
+    return formats
+      .filter(format => {
+        // Apply search filter
+        if (searchTerm && !format.format_note?.toLowerCase().includes(searchTerm.toLowerCase()) && 
+            !format.format_id.includes(searchTerm.toLowerCase()) &&
+            !format.ext.includes(searchTerm.toLowerCase()) &&
+            !format.resolution?.toLowerCase().includes(searchTerm.toLowerCase())) {
+          return false
+        }
+        
+        // Apply audio/video filters
+        if (showAudioOnly && format.vcodec && format.vcodec !== 'none') return false
+        if (showVideoOnly && format.acodec && format.acodec !== 'none') return false
+        
+        return true
+      })
+      .sort((a, b) => {
+        // Sort by filesize (largest first) if available
+        if (a.filesize && b.filesize) return b.filesize - a.filesize
+        return 0
+      })
+  }, [formats, searchTerm, showAudioOnly, showVideoOnly])
 
-    const videoFormats = extendedFormats.filter(fmt => fmt.vcodec && fmt.vcodec !== 'none')
-    const audioFormats = extendedFormats.filter(fmt => fmt.vcodec === 'none' && fmt.acodec && fmt.acodec !== 'none')
-    const otherFormats = extendedFormats.filter(fmt => !fmt.vcodec || (fmt.vcodec === 'none' && (!fmt.acodec || fmt.acodec === 'none')))
-
-    const selectedFormats = outerTab === 'video' ? videoFormats : outerTab === 'audio' ? audioFormats : otherFormats
-    const groupedFormats = groupByResolution(selectedFormats)
-    const resolutionKeys = Object.keys(groupedFormats).sort((a, b) => {
-      const numA = parseInt(a)
-      const numB = parseInt(b)
-      if (!isNaN(numA) && !isNaN(numB)) return numB - numA
-      return a.localeCompare(b)
-    })
-
-    useEffect(() => {
-      if (!resolutionKeys.includes(innerTab)) {
-        setInnerTab(resolutionKeys[0] || '')
-      }
-    }, [outerTab, resolutionKeys, innerTab])
-
-    const renderFormatCards = (formatList: ExtendedVideoFormat[]) => (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {formatList.map((format) => (
-          <Card
-            key={format.format_id}
-            onClick={() => updateDownloadOption('format', format.format_id)}
-            className={`cursor-pointer hover:shadow-lg transition-shadow border-2 ${
-              downloadOptions.format === format.format_id ? 'border-primary' : 'border-transparent'
-            }`}
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Film className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-medium">Select Format</h3>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Badge variant={showVideoOnly ? "default" : "outline"} 
+            className="cursor-pointer"
+            onClick={() => {
+              setShowVideoOnly(!showVideoOnly)
+              if (!showVideoOnly) setShowAudioOnly(false)
+            }}
           >
-            <CardHeader>
-              <CardTitle className="text-sm font-semibold">{format.format_id}</CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs">{getFormatLabel(format)}</CardContent>
-          </Card>
-        ))}
+            <Film className="mr-1 h-3 w-3" /> Video
+            {showVideoOnly && <X className="ml-1 h-3 w-3" />}
+          </Badge>
+          
+          <Badge variant={showAudioOnly ? "default" : "outline"} 
+            className="cursor-pointer"
+            onClick={() => {
+              setShowAudioOnly(!showAudioOnly)
+              if (!showAudioOnly) setShowVideoOnly(false)
+            }}
+          >
+            <Film className="mr-1 h-3 w-3" /> Audio
+            {showAudioOnly && <X className="ml-1 h-3 w-3" />}
+          </Badge>
+        </div>
       </div>
-    )
-
-    return (
-      <div className="space-y-4">
-        <Label>Video Format</Label>
-        <Tabs value={outerTab} onValueChange={(v: string) => setOuterTab(v as 'video' | 'audio' | 'other')}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="video">Video</TabsTrigger>
-            <TabsTrigger value="audio">Audio</TabsTrigger>
-            <TabsTrigger value="other">Other</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        {resolutionKeys.length > 0 ? (
-          <Tabs value={innerTab} onValueChange={(v: string) => setInnerTab(v)}>
-            <TabsList className="mb-4">
-              {resolutionKeys.map((res) => (
-                <TabsTrigger key={res} value={res}>
-                  {res}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            {resolutionKeys.map((res) => (
-              <TabsContent key={res} value={res}>
-                {renderFormatCards(groupedFormats[res])}
-              </TabsContent>
-            ))}
-          </Tabs>
-        ) : (
-          <div className="text-sm text-muted-foreground">No formats available for {outerTab}.</div>
+      
+      <div className="flex items-center gap-2 relative">
+        <Search className="h-4 w-4 absolute left-3 text-muted-foreground" />
+        <Input 
+          placeholder="Search formats..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-9 pr-9"
+        />
+        {searchTerm && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+            onClick={() => setSearchTerm("")}
+          >
+            <X className="h-3 w-3" />
+          </Button>
         )}
       </div>
-    )
-  }
-)
-VideoFormatSelector.displayName = 'VideoFormatSelector'
+      
+      <div className="border rounded-md">
+        <ScrollArea className="h-[360px]">
+          <RadioGroup 
+            value={downloadOptions.format}
+            onValueChange={(value) => updateDownloadOption("format", value)}
+          >
+            <Table>
+              <TableHeader className="sticky top-0 bg-background z-10">
+                <TableRow>
+                  <TableHead className="w-[50px]"></TableHead>
+                  <TableHead className="w-[100px]">Format ID</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="text-right">Size</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredFormats.length > 0 ? (
+                  filteredFormats.map((format) => {
+                    const hasVideo = format.vcodec && format.vcodec !== 'none'
+                    const hasAudio = format.acodec && format.acodec !== 'none'
+                    
+                    return (
+                      <TableRow 
+                        key={format.format_id}
+                        className={`
+                          cursor-pointer transition-colors hover:bg-accent
+                          ${downloadOptions.format === format.format_id ? 'bg-primary/10 hover:bg-primary/10' : ''}
+                        `}
+                        onClick={() => updateDownloadOption("format", format.format_id)}
+                      >
+                        <TableCell className="p-0 pl-4">
+                          <RadioGroupItem
+                            value={format.format_id}
+                            id={`format-${format.format_id}`}
+                            className="sr-only"
+                          />
+                          <div className={`h-5 w-5 rounded-full flex items-center justify-center border ${
+                            downloadOptions.format === format.format_id 
+                              ? 'border-primary bg-primary text-primary-foreground' 
+                              : 'border-muted-foreground/30'
+                          }`}>
+                            {downloadOptions.format === format.format_id && <Check className="h-3 w-3" />}
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{format.format_id}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {format.resolution || 'Audio only'} 
+                              {format.format_note && ` • ${format.format_note}`}
+                            </span>
+                            <div className="flex gap-1 mt-0.5">
+                              {hasVideo && (
+                                <Badge variant="outline" className="text-xs py-0 h-5">
+                                  Video: {format.vcodec?.split('.')[0]}
+                                </Badge>
+                              )}
+                              {hasAudio && (
+                                <Badge variant="outline" className="text-xs py-0 h-5">
+                                  Audio: {format.acodec?.split('.')[0]}
+                                </Badge>
+                              )}
+                              <Badge variant="outline" className="text-xs py-0 h-5">
+                                .{format.ext}
+                              </Badge>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {formatFileSize(format.filesize)}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
+                      <div className="flex flex-col items-center gap-2">
+                        <Filter className="h-6 w-6" />
+                        <p>No formats match your filter criteria</p>
+                        {(searchTerm || showAudioOnly || showVideoOnly) && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              setSearchTerm("")
+                              setShowAudioOnly(false)
+                              setShowVideoOnly(false)
+                            }}
+                          >
+                            Clear filters
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </RadioGroup>
+        </ScrollArea>
+      </div>
+      
+      <div className="flex items-center justify-between pt-2">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <HelpCircle className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <p>For best results with video + audio, choose a format that includes both. 
+              Or select a video-only format, and audio will be automatically added.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        {downloadOptions.format && (
+          <Badge variant="outline" className="px-3 py-1">
+            <Download className="h-3 w-3 mr-1" />
+            Format selected: <span className="font-mono ml-1">{downloadOptions.format}</span>
+          </Badge>
+        )}
+      </div>
+    </div>
+  )
+}

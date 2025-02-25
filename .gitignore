@@ -10,6 +10,7 @@ server/__pycache__/
 frontend/node_modules/
 frontend/dist/
 frontend/dist-ssr/
+frontend/package-lock.json
 
 # -------------------------
 # Environment files (common)
