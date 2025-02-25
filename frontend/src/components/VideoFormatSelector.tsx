@@ -145,9 +145,17 @@ export function VideoFormatSelector({
         if (!aHasAudio && bHasAudio) return 1;
         
         // If still tied, prefer by filesize
-        return (b.filesize || b.filesize_approx || 0) - (a.filesize || a.filesize_approx || 0);
+        if (a.filesize && b.filesize) {
+          return b.filesize - a.filesize;
+        }
+        
+        // If no good comparison method is available, prioritize by format_id numeric value
+        // This is not ideal but better than nothing
+        const numA = parseInt(a.format_id) || 0;
+        const numB = parseInt(b.format_id) || 0;
+        return numB - numA; // Higher format IDs often (but not always) indicate better quality
       });
-      
+        
       console.log("Best format by resolution:", sortedByResolution[0]);
       return sortedByResolution[0];
     }
