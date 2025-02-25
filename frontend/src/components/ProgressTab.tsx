@@ -140,12 +140,14 @@ export function ProgressTab({ downloadStatus, resetForm }: ProgressTabProps) {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.7 }}
-              className="mt-8 flex flex-col sm:flex-row gap-3 justify-center"
+              className="mt-8 flex flex-col sm:flex-row gap-3 justify-center relative z-10"
             >
               {downloadStatus.status === "completed" ? (
                 <Button 
-                  className="w-full sm:w-auto flex-1"
+                  className="w-full sm:w-auto flex-1 relative z-20"
                   onClick={() => window.open("/downloads", "_blank")}
+                  style={{ pointerEvents: 'auto' }}
+                  data-testid="open-downloads-button"
                 >
                   <ArrowDownToLine className="mr-2 h-4 w-4" />
                   Open Downloads Folder
@@ -153,8 +155,10 @@ export function ProgressTab({ downloadStatus, resetForm }: ProgressTabProps) {
               ) : downloadStatus.status === "error" ? (
                 <Button 
                   variant="destructive"
-                  className="w-full sm:w-auto flex-1"
+                  className="w-full sm:w-auto flex-1 relative z-20"
                   onClick={resetForm}
+                  style={{ pointerEvents: 'auto' }}
+                  data-testid="try-again-button"
                 >
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Try Again
@@ -163,8 +167,13 @@ export function ProgressTab({ downloadStatus, resetForm }: ProgressTabProps) {
               
               <Button 
                 variant="outline" 
-                className="w-full sm:w-auto flex-1"
-                onClick={resetForm}
+                className="w-full sm:w-auto flex-1 relative z-20 hover:bg-primary/10 active:bg-primary/20"
+                onClick={() => {
+                  console.log('Reset form button clicked');
+                  resetForm();
+                }}
+                style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+                data-testid="download-another-button"
               >
                 <Download className="mr-2 h-4 w-4" />
                 Download Another Video
