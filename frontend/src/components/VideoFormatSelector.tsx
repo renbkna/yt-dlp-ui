@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
-import { Search, Film, Filter, X, Check, HelpCircle, Download } from "lucide-react"
+import { Search, Film, Filter, X, Check, HelpCircle, Download, CheckCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { 
   Tooltip,
@@ -71,8 +71,122 @@ export function VideoFormatSelector({
       })
   }, [formats, searchTerm, showAudioOnly, showVideoOnly])
 
+  // Completely revised function to determine the best quality format
+  const getBestQualityFormat = () => {
+    if (!formats || formats.length === 0) return null;
+    
+    console.log("Available formats:", formats);
+    
+    // Helper function to extract resolution as a number (height)
+    const getHeight = (format: VideoFormat): number => {
+      // From format_note (e.g. "1080p" -> 1080)
+      if (format.format_note) {
+        const match = format.format_note.match(/(\d+)p/);
+        if (match && match[1]) return parseInt(match[1]);
+      }
+      
+      // From resolution (e.g. "1280x720" -> 720)
+      if (format.resolution) {
+        const match = format.resolution.match(/\d+x(\d+)/);
+        if (match && match[1]) return parseInt(match[1]);
+      }
+      
+      return 0;
+    };
+    
+    // Best known high quality format IDs for YouTube
+    const highQualityIds = ['270', '614', '137', '248', '299', '303', '308', '315', '571', '401', '699', '700', '701', '136', '247'];
+    
+    // First, try to find formats with explicitly known high quality IDs
+    const knownHighQualityFormats = formats.filter(f => 
+      highQualityIds.includes(f.format_id) && 
+      f.vcodec && f.vcodec !== 'none' // Must have video
+    );
+    
+    console.log("Known high quality formats:", knownHighQualityFormats);
+    
+    if (knownHighQualityFormats.length > 0) {
+      // Sort by our preferred order (the order in highQualityIds array)
+      const bestFormat = knownHighQualityFormats.sort((a, b) => {
+        return highQualityIds.indexOf(a.format_id) - highQualityIds.indexOf(b.format_id);
+      })[0];
+      
+      console.log("Selected known high quality format:", bestFormat);
+      return bestFormat;
+    }
+    
+    // Next best approach: Sort ALL formats by resolution and pick the highest
+    const videoFormats = formats.filter(f => 
+      f.vcodec && f.vcodec !== 'none' && // Must have video
+      f.format_id !== 'sb0' && f.format_id !== 'sb1' && // Exclude storyboards
+      f.format_id !== 'sb2' && f.format_id !== 'sb3' && 
+      !f.format_note?.includes('storyboard') // Double check no storyboards
+    );
+    
+    console.log("All video formats:", videoFormats);
+    
+    if (videoFormats.length > 0) {
+      // Sort by height (resolution) in descending order
+      const sortedByResolution = [...videoFormats].sort((a, b) => {
+        const heightA = getHeight(a);
+        const heightB = getHeight(b);
+        
+        console.log(`Format ${a.format_id}: ${a.format_note}, res=${a.resolution}, height=${heightA}`);
+        
+        if (heightA !== heightB) {
+          return heightB - heightA; // Higher resolution first
+        }
+        
+        // If same resolution, prefer format with audio
+        const aHasAudio = a.acodec && a.acodec !== 'none';
+        const bHasAudio = b.acodec && b.acodec !== 'none';
+        
+        if (aHasAudio && !bHasAudio) return -1;
+        if (!aHasAudio && bHasAudio) return 1;
+        
+        // If still tied, prefer by filesize
+        return (b.filesize || b.filesize_approx || 0) - (a.filesize || a.filesize_approx || 0);
+      });
+      
+      console.log("Best format by resolution:", sortedByResolution[0]);
+      return sortedByResolution[0];
+    }
+    
+    // Fallback to any available format
+    return formats[0];
+  };
+  
+  const handleBestQualitySelect = () => {
+    const bestFormat = getBestQualityFormat();
+    if (bestFormat) {
+      updateDownloadOption("format", bestFormat.format_id);
+      // Scroll to the selected format in the list (optional enhancement)
+      setTimeout(() => {
+        const selectedElement = document.getElementById(`format-${bestFormat.format_id}`);
+        selectedElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  };
+
   return (
     <div className="space-y-4">
+      {/* Redesigned Select Best Quality button to match project style */}
+      <Button
+        variant="default"
+        size="lg"
+        className="w-full relative z-20 bg-primary hover:bg-primary/90 shadow transition-all flex items-center justify-center gap-2"
+        onClick={handleBestQualitySelect}
+        disabled={!formats || formats.length === 0}
+        data-testid="best-quality-button"
+      >
+        <CheckCircle className="w-5 h-5" />
+        <span>Select Best Quality</span>
+      </Button>
+      
+      <div className="text-sm text-muted-foreground text-center">
+        Or select a specific format manually:
+      </div>
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Film className="h-5 w-5 text-primary" />
