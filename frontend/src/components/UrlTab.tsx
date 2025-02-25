@@ -18,7 +18,6 @@ export interface UrlTabProps {
 
 export const UrlTab: React.FC<UrlTabProps> = React.memo(
   ({ url, setUrl, loading, fetchVideoInfo, isPlaylist, setIsPlaylist }) => {
-    const [urlError, setUrlError] = useState<string>('')
     const [urlFocused, setUrlFocused] = useState(false)
 
     useEffect(() => {
@@ -26,14 +25,8 @@ export const UrlTab: React.FC<UrlTabProps> = React.memo(
         const urlObj = new URL(url)
         const params = new URLSearchParams(urlObj.search)
         setIsPlaylist(params.has('list'))
-        setUrlError('')
       } catch {
         setIsPlaylist(false)
-        if (url.length > 0) {
-          setUrlError('Invalid URL')
-        } else {
-          setUrlError('')
-        }
       }
     }, [url, setIsPlaylist])
 

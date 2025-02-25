@@ -1,4 +1,3 @@
-import React from 'react'
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -9,8 +8,7 @@ import {
   Cookie, 
   FastForward, 
   Bookmark, 
-  Info,
-  SkipForward
+  Info
 } from "lucide-react"
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'

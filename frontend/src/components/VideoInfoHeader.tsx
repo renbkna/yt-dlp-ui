@@ -1,5 +1,5 @@
-import { Calendar, Clock, Eye, User, ListVideo } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Calendar, Clock, Eye, User, ListVideo, Youtube } from "lucide-react" // Added Youtube import
+// Removed unused Card and CardContent imports
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { VideoInfo } from "@/types"

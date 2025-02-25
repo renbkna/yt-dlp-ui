@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Loader2, Settings, Download, AlertCircle, Youtube, List, RefreshCw, Check } from "lucide-react"
+import { Loader2, Settings, Download, AlertCircle, Youtube, List } from "lucide-react"
 import type { DownloadOptions, VideoInfo, VideoFormat, DownloadStatus } from "@/types"
 import { useToast } from "@/components/ui/use-toast"
 import { AnimatePresence, motion } from "framer-motion"
@@ -179,7 +179,7 @@ const YTDLPPage = () => {
         }
       }, 1000)
     } catch (error) {
-      const errorMsg = error instanceof Error ? err.message : "Failed to start download"
+      const errorMsg = error instanceof Error ? error.message : "Failed to start download"
       setError(errorMsg)
       toast({
         title: "Download Error",

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import YTDLP from "@/YTDLP"
-import { Moon, Sun, Monitor, Github, Youtube, Info } from "lucide-react"
+import { Moon, Sun, Monitor, Github, Youtube } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Toaster } from "@/components/ui/toaster"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"

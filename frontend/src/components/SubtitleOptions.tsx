@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react' // Removed React import since it's not used directly
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -143,10 +143,7 @@ export function SubtitleOptions({ downloadOptions, updateDownloadOption }: Subti
                           key={lang.code}
                           variant={isSelected ? "default" : "outline"}
                           size="sm"
-                          className={`
-                            justify-start text-xs h-8 px-2 
-                            ${isSelected ? 'bg-primary' : 'hover:bg-accent'}
-                          `}
+                          className={`justify-start text-xs h-8 px-2 ${isSelected ? 'bg-primary' : 'hover:bg-accent'}`}
                           onClick={() => isSelected ? removeLanguage(lang.code) : addLanguage(lang.code)}
                         >
                           {isSelected && <Check className="h-3 w-3 mr-1" />}
