@@ -4,13 +4,44 @@
 
 @layer base {
   :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 270 64.9% 70.1%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 272 64.9% 46.1%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 270 64.9% 70.1%;
+    --radius: 0.5rem;
+
+    /* Custom colors */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    --info: 221 83% 53%;
+    --info-foreground: 0 0% 98%;
+  }
+
+  .light {
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
+    --primary: 266.7 100% 60%;
     --primary-foreground: 0 0% 98%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
@@ -23,37 +54,6 @@
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 240 10% 3.9%;
-    --radius: 0.5rem;
-
-    /* Custom colors */
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 98%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 0%;
-    --info: 221 83% 53%;
-    --info-foreground: 0 0% 98%;
-  }
-
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
 
     /* Custom colors */
     --success: 142 76% 36%;
@@ -88,10 +88,10 @@
     @apply bg-muted/50 rounded-full;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-muted-foreground/30 rounded-full;
+    @apply bg-primary/50 rounded-full;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/50;
+    @apply bg-primary/70;
   }
 }
 
@@ -118,7 +118,7 @@
   h4,
   h5,
   h6 {
-    @apply font-bold tracking-tight;
+    @apply font-bold tracking-tight text-white;
   }
   h1 {
     @apply text-4xl md:text-5xl;
@@ -137,6 +137,19 @@
   }
   h6 {
     @apply text-base md:text-lg;
+  }
+  
+  /* Improved text contrast */
+  p {
+    @apply text-gray-200;
+  }
+  
+  small, .text-sm {
+    @apply text-gray-300;
+  }
+  
+  .text-muted-foreground {
+    @apply text-gray-400;
   }
 }
 
@@ -172,11 +185,22 @@
   }
 }
 
-/* Grid pattern background */
-.bg-grid-pattern {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(15 23 42 / 0.04)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
+/* Enhanced contrast elements */
+@layer components {
+  .high-contrast-border {
+    @apply border border-violet-500/40;
+  }
+  
+  .high-contrast-bg {
+    @apply bg-violet-900/30;
+  }
+  
+  .high-contrast-text {
+    @apply text-violet-200;
+  }
 }
 
-.dark .bg-grid-pattern {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(15 23 42 / 0.04)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
+/* Grid pattern background */
+.bg-grid-pattern {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(109 40 217 / 0.2)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
 }
