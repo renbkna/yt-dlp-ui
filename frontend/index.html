@@ -1,13 +1,46 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ren yt-dlp</title>
+    <meta name="description" content="A powerful web interface for yt-dlp, download videos and audio from YouTube, Vimeo, TikTok and hundreds of other sites." />
+    <meta name="keywords" content="yt-dlp, youtube downloader, video downloader, audio extraction, YouTube, Vimeo, TikTok" />
+    <meta name="author" content="renbkna" />
+    <meta name="theme-color" content="#6D28D9" />
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Ren yt-dlp | Video Downloader" />
+    <meta property="og:description" content="Download videos from YouTube, Vimeo, TikTok and hundreds of other sites with this powerful yt-dlp web interface." />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:url" content="https://renytdlp.com" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Ren yt-dlp | Video Downloader" />
+    <meta name="twitter:description" content="Download videos from YouTube, Vimeo, TikTok and hundreds of other sites with this powerful yt-dlp web interface." />
+    <meta name="twitter:image" content="/og-image.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#6D28D9" />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <title>Ren yt-dlp | Video Downloader</title>
   </head>
-  <body>
+  <body class="theme-transition">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <noscript>
+      <div style="padding: 2rem; text-align: center; max-width: 600px; margin: 0 auto;">
+        <h1 style="margin-bottom: 1rem;">JavaScript Required</h1>
+        <p>This application requires JavaScript to run. Please enable JavaScript in your browser settings and reload the page.</p>
+      </div>
+    </noscript>
   </body>
 </html>
