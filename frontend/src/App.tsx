@@ -64,8 +64,8 @@ function App() {
         <header className="sticky top-0 z-10 w-full border-b border-violet-500/30 bg-background/90 backdrop-blur-lg">
           <div className="container mx-auto px-4 h-14 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="bg-gradient-to-r from-violet-600 to-purple-700 p-1.5 rounded-md shadow-sm">
-                <Youtube className="h-4 w-4 text-white" />
+              <div className="p-1 rounded-md bg-violet-500/20">
+                <Youtube className="h-5 w-5 text-violet-400" />
               </div>
               <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
                 Ren YT-DLP
