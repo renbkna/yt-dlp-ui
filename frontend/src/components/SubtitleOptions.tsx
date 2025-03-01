@@ -1,11 +1,11 @@
-import { useState } from 'react' // Removed React import since it's not used directly
+import { useState } from 'react'
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Subtitles, Plus, X, Globe, Check } from "lucide-react"
+import { Subtitles, Plus, X, Globe, Check, Languages } from "lucide-react"
 import { DownloadOptions } from "@/types"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
@@ -53,31 +53,40 @@ export function SubtitleOptions({ downloadOptions, updateDownloadOption }: Subti
   }
   
   return (
-    <Card className="border-primary/10">
-      <CardHeader className="pb-3 bg-muted/30">
+    <Card className="dark:border-primary/20 border-secondary/30 rounded-xl shadow-sm overflow-hidden">
+      <CardHeader className="pb-3 dark:bg-primary/5 bg-secondary/10 border-b dark:border-primary/20 border-secondary/20">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <Subtitles className="h-4 w-4" />
+          <Subtitles className="h-4 w-4 dark:text-primary text-secondary-foreground" />
           Subtitle Options
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-4">
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-2 rounded-md hover:bg-accent transition-colors">
+          <div className="flex items-center justify-between p-3 rounded-lg dark:hover:bg-primary/5 hover:bg-secondary/5 transition-colors">
             <div className="flex items-center space-x-3">
-              <Globe className="h-4 w-4 text-primary" />
-              <Label htmlFor="download-subtitles" className="cursor-pointer">Download subtitles</Label>
+              <div className="p-1.5 rounded-full dark:bg-primary/10 bg-secondary/10">
+                <Globe className="h-4 w-4 dark:text-primary text-secondary-foreground" />
+              </div>
+              <div>
+                <Label htmlFor="download-subtitles" className="cursor-pointer font-medium">Download subtitles</Label>
+                <p className="text-xs dark:text-primary-foreground/60 text-secondary-foreground/60 mt-1">
+                  Download available subtitles for the video
+                </p>
+              </div>
             </div>
             <Switch
               id="download-subtitles"
               checked={downloadOptions.downloadSubtitles}
               onCheckedChange={(value) => updateDownloadOption("downloadSubtitles", value)}
+              className="data-[state=checked]:dark:bg-primary data-[state=checked]:bg-secondary"
             />
           </div>
           
           {downloadOptions.downloadSubtitles && (
-            <div className="space-y-4 pt-2 border-t">
+            <div className="space-y-4 pt-3 dark:border-t border-t dark:border-primary/10 border-secondary/10">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="subtitle-languages" className="text-sm font-medium">
+                <Label htmlFor="subtitle-languages" className="text-sm font-medium flex items-center gap-1.5">
+                  <Languages className="h-4 w-4 dark:text-primary text-secondary-foreground" />
                   Selected Languages
                 </Label>
                 {downloadOptions.subtitleLanguages.length > 0 ? (
@@ -85,22 +94,25 @@ export function SubtitleOptions({ downloadOptions, updateDownloadOption }: Subti
                     {downloadOptions.subtitleLanguages.map((lang) => {
                       const language = commonLanguages.find((l) => l.code === lang)
                       return (
-                        <Badge key={lang} variant="secondary" className="pl-2 pr-1 py-1 flex items-center gap-1">
+                        <Badge key={lang} variant="secondary" 
+                          className="pl-2.5 pr-1 py-1 flex items-center gap-1.5 dark:bg-primary/10 bg-secondary/10 
+                            dark:text-primary-foreground text-secondary-foreground dark:border-primary/20 border-secondary/20">
                           {language?.name || lang}
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-4 w-4 rounded-full hover:bg-destructive/20"
+                            className="h-4 w-4 rounded-full dark:hover:bg-destructive/20 hover:bg-destructive/20"
                             onClick={() => removeLanguage(lang)}
                           >
-                            <X className="h-2 w-2" />
+                            <X className="h-2.5 w-2.5" />
                           </Button>
                         </Badge>
                       )
                     })}
                   </div>
                 ) : (
-                  <div className="text-sm text-muted-foreground py-2 px-3 bg-muted/30 rounded-md">
+                  <div className="text-sm dark:text-primary-foreground/70 text-secondary-foreground/70 py-2 px-3 
+                    dark:bg-primary/5 bg-secondary/5 rounded-md dark:border border-primary/20 border-secondary/20">
                     No languages selected. Default is "en".
                   </div>
                 )}
@@ -116,12 +128,13 @@ export function SubtitleOptions({ downloadOptions, updateDownloadOption }: Subti
                     placeholder="e.g. en, fr, de"
                     value={newLanguage}
                     onChange={(e) => setNewLanguage(e.target.value)}
-                    className="h-9"
+                    className="h-9 dark:border-primary/30 border-secondary/30"
                   />
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="h-9" 
+                    className="h-9 dark:border-primary/30 border-secondary/30 dark:text-primary-foreground text-secondary-foreground
+                      dark:hover:bg-primary/20 hover:bg-secondary/20" 
                     onClick={() => newLanguage && addLanguage(newLanguage)}
                     disabled={!newLanguage}
                   >
@@ -134,7 +147,7 @@ export function SubtitleOptions({ downloadOptions, updateDownloadOption }: Subti
                 <Label className="text-sm font-medium">
                   Common Languages
                 </Label>
-                <ScrollArea className="h-32 border rounded-md p-1">
+                <ScrollArea className="h-32 dark:border border dark:border-primary/20 border-secondary/20 rounded-md p-1">
                   <div className="grid grid-cols-2 gap-1 p-1">
                     {commonLanguages.map((lang) => {
                       const isSelected = downloadOptions.subtitleLanguages.includes(lang.code)
@@ -143,10 +156,12 @@ export function SubtitleOptions({ downloadOptions, updateDownloadOption }: Subti
                           key={lang.code}
                           variant={isSelected ? "default" : "outline"}
                           size="sm"
-                          className={`justify-start text-xs h-8 px-2 ${isSelected ? 'bg-primary' : 'hover:bg-accent'}`}
+                          className={`justify-start text-xs h-8 px-2 ${isSelected ? 
+                            'dark:bg-primary bg-secondary dark:text-white text-white' : 
+                            'dark:border-primary/30 border-secondary/30 dark:hover:bg-primary/20 hover:bg-secondary/20'}`}
                           onClick={() => isSelected ? removeLanguage(lang.code) : addLanguage(lang.code)}
                         >
-                          {isSelected && <Check className="h-3 w-3 mr-1" />}
+                          {isSelected && <Check className="h-3 w-3 mr-1.5" />}
                           {lang.name} ({lang.code})
                         </Button>
                       )

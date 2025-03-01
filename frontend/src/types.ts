@@ -51,6 +51,8 @@ export interface DownloadStatus {
   progress: number
   filename?: string
   error?: string
+  speed?: string
+  eta?: number
 }
 
 export const API_BASE = 'http://localhost:8000/api'

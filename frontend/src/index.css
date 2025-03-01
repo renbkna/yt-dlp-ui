@@ -4,64 +4,66 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 270 64.9% 70.1%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 65%;
-    --accent: 272 64.9% 46.1%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 270 64.9% 70.1%;
-    --radius: 0.5rem;
+    /* Kawaii Pastel Theme - Light Mode */
+    --background: 325 80% 98%;
+    --foreground: 325 50% 15%;
+    --card: 325 80% 97%;
+    --card-foreground: 325 50% 15%;
+    --popover: 325 80% 97%;
+    --popover-foreground: 325 50% 15%;
+    --primary: 325 85% 70%;
+    --primary-foreground: 325 20% 98%;
+    --secondary: 275 75% 85%;
+    --secondary-foreground: 275 50% 20%;
+    --muted: 325 30% 90%;
+    --muted-foreground: 325 30% 40%;
+    --accent: 192 95% 80%;
+    --accent-foreground: 192 50% 20%;
+    --destructive: 0 90% 65%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 325 50% 85%;
+    --input: 325 50% 85%;
+    --ring: 325 85% 70%;
+    --radius: 0.75rem;
 
     /* Custom colors */
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 98%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 0%;
-    --info: 221 83% 53%;
-    --info-foreground: 0 0% 98%;
+    --success: 142 76% 56%;
+    --success-foreground: 142 76% 20%;
+    --warning: 35 92% 65%;
+    --warning-foreground: 35 92% 20%;
+    --info: 221 83% 70%;
+    --info-foreground: 221 83% 25%;
   }
 
-  .light {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 266.7 100% 60%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
+  .dark {
+    /* Sewerslvt Depression Theme - Dark Mode */
+    --background: 260 30% 5%;
+    --foreground: 260 15% 80%;
+    --card: 260 30% 7%;
+    --card-foreground: 260 15% 80%;
+    --popover: 260 30% 7%;
+    --popover-foreground: 260 15% 80%;
+    --primary: 321 80% 30%;
+    --primary-foreground: 260 10% 90%;
+    --secondary: 260 25% 12%;
+    --secondary-foreground: 260 15% 80%;
+    --muted: 260 25% 10%;
+    --muted-foreground: 260 15% 60%;
+    --accent: 220 70% 30%;
+    --accent-foreground: 260 15% 90%;
+    --destructive: 0 70% 30%;
+    --destructive-foreground: 0 0% 90%;
+    --border: 260 25% 15%;
+    --input: 260 25% 15%;
+    --ring: 321 80% 30%;
 
     /* Custom colors */
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 98%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 0%;
-    --info: 221 83% 53%;
-    --info-foreground: 0 0% 98%;
+    --success: 142 70% 25%;
+    --success-foreground: 142 70% 90%;
+    --warning: 35 80% 35%;
+    --warning-foreground: 35 80% 90%;
+    --info: 221 70% 30%;
+    --info-foreground: 221 70% 90%;
   }
 }
 
@@ -118,7 +120,7 @@
   h4,
   h5,
   h6 {
-    @apply font-bold tracking-tight text-white;
+    @apply font-bold tracking-tight text-foreground;
   }
   h1 {
     @apply text-4xl md:text-5xl;
@@ -139,17 +141,30 @@
     @apply text-base md:text-lg;
   }
   
-  /* Improved text contrast */
+  /* Text contrast based on theme */
+  .dark p {
+    @apply text-slate-300;
+  }
+  
+  .dark small, .dark .text-sm {
+    @apply text-slate-400;
+  }
+  
+  .dark .text-muted-foreground {
+    @apply text-slate-500;
+  }
+  
+  /* Light mode text */
   p {
-    @apply text-gray-200;
+    @apply text-slate-800;
   }
   
   small, .text-sm {
-    @apply text-gray-300;
+    @apply text-slate-700;
   }
   
   .text-muted-foreground {
-    @apply text-gray-400;
+    @apply text-slate-600;
   }
 }
 
@@ -166,16 +181,27 @@
     @apply transition-all duration-300 hover:shadow-md hover:border-primary/20;
   }
 
+  /* Glass effect for cards */
+  .dark .card-glass {
+    @apply bg-background/70 backdrop-blur-lg border border-primary/20;
+  }
+  
   .card-glass {
-    @apply bg-background/70 backdrop-blur-lg border border-white/10;
+    @apply bg-white/70 backdrop-blur-lg border border-secondary/30;
   }
 
+  /* Glow effect for cards and buttons */
   .glow {
     @apply relative overflow-hidden;
   }
 
+  .dark .glow::after {
+    @apply content-[''] absolute -inset-[100%] bg-gradient-to-r from-transparent via-primary/10 to-transparent opacity-0 transition-all duration-1000 ease-in-out;
+    transform: rotate(30deg);
+  }
+  
   .glow::after {
-    @apply content-[''] absolute -inset-[100%] bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 transition-all duration-1000 ease-in-out;
+    @apply content-[''] absolute -inset-[100%] bg-gradient-to-r from-transparent via-secondary/30 to-transparent opacity-0 transition-all duration-1000 ease-in-out;
     transform: rotate(30deg);
   }
 
@@ -187,20 +213,108 @@
 
 /* Enhanced contrast elements */
 @layer components {
+  /* Dark mode */
+  .dark .high-contrast-border {
+    @apply border border-primary/30;
+  }
+  
+  .dark .high-contrast-bg {
+    @apply bg-primary/15;
+  }
+  
+  .dark .high-contrast-text {
+    @apply text-primary-foreground;
+  }
+  
+  /* Light mode */
   .high-contrast-border {
-    @apply border border-violet-500/40;
+    @apply border border-secondary/40;
   }
   
   .high-contrast-bg {
-    @apply bg-violet-900/30;
+    @apply bg-secondary/20;
   }
   
   .high-contrast-text {
-    @apply text-violet-200;
+    @apply text-secondary-foreground;
   }
 }
 
-/* Grid pattern background */
+/* Theme-specific grid patterns */
+.dark .bg-grid-pattern {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(118 35 47 / 0.2)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
+}
+
 .bg-grid-pattern {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(109 40 217 / 0.2)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(150 120 210 / 0.2)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
+}
+
+/* Kawaii pastel style elements */
+@layer components {
+  .pastel-card {
+    @apply bg-gradient-to-br from-secondary/50 to-primary/30 border-2 border-primary/30 shadow-xl rounded-3xl;
+  }
+  
+  .pastel-button {
+    @apply bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 
+    text-primary-foreground rounded-full shadow-md font-medium transition-all duration-300;
+  }
+  
+  .pastel-input {
+    @apply bg-white/70 border-2 border-primary/30 rounded-full focus:border-primary/70 focus:ring-2 
+    focus:ring-primary/30 transition-all duration-300;
+  }
+  
+  /* Sewerslvt dark style elements */
+  .dark .sewerslvt-card {
+    @apply bg-gradient-to-br from-background to-primary/5 border border-primary/20 shadow-lg rounded-lg;
+  }
+  
+  .dark .sewerslvt-button {
+    @apply bg-gradient-to-r from-primary/70 to-accent/40 hover:from-primary/80 hover:to-accent/50 
+    text-primary-foreground rounded-md shadow-lg font-medium transition-all duration-300;
+  }
+  
+  .dark .sewerslvt-input {
+    @apply bg-background border border-primary/20 rounded-md focus:border-primary/40 focus:ring-2 
+    focus:ring-primary/20 transition-all duration-300;
+  }
+  
+  /* Badge styles */
+  .kawaii-badge {
+    @apply px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary/30 text-secondary-foreground;
+  }
+  
+  .dark .sewerslvt-badge {
+    @apply px-2 py-0.5 rounded-md text-xs font-medium bg-primary/15 text-primary-foreground;
+  }
+}
+
+/* Animated gradients for special elements */
+@layer components {
+  .animated-gradient-dark {
+    @apply relative;
+    background: linear-gradient(-45deg, #701a3f, #372066, #1f476b, #701a3f);
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+  }
+  
+  .animated-gradient-light {
+    @apply relative;
+    background: linear-gradient(-45deg, #ffb7e5, #a78bfa, #7dd3fc, #ffb7e5);
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+  }
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }

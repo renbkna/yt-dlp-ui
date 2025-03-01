@@ -1,7 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-  <!-- Simple background with equal corners -->
-  <rect width="32" height="32" fill="#1E1B4B"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="32" height="32" rx="8" fill="#0c0a12"/>
   
-  <!-- Simplified YouTube logo using official proportions -->
-  <path fill="#A78BFA" d="M24.531 11.815c-.29-1.09-1.14-1.95-2.22-2.241C20.449 9 16 9 16 9s-4.45 0-6.312.574c-1.08.291-1.93 1.151-2.22 2.241C7 13.696 7 16.998 7 16.998s0 3.303.469 4.882c.29 1.09 1.14 1.95 2.22 2.241C11.55 24.696 16 24.696 16 24.696s4.449 0 6.311-.575c1.08-.291 1.93-1.151 2.22-2.24.468-1.58.468-4.883.468-4.883s0-3.302-.468-4.883zM13.601 20.395v-6.794l4.98 3.397-4.98 3.397z"/>
+  <!-- Soft glow effect -->
+  <rect width="32" height="32" rx="8" fill="#701a3f" opacity="0.05"/>
+  <rect width="30" height="30" x="1" y="1" rx="7" stroke="#701a3f" stroke-width="0.5" opacity="0.7"/>
+  
+  <!-- Triangle play button -->
+  <path d="M21.3333 16L12 22V10L21.3333 16Z" fill="#701a3f"/>
+  
+  <!-- Subtle glow effect -->
+  <filter id="glow">
+    <feGaussianBlur stdDeviation="1" result="blur"/>
+    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+  </filter>
 </svg>

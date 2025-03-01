@@ -1,165 +1,156 @@
-# YT-DLP Web UI
+# Ren YT-DLP
 
-A web-based interface for downloading videos and playlists using [yt-dlp](https://github.com/yt-dlp/yt-dlp). This project combines a **React** front-end with a **FastAPI** back-end, allowing users to fetch video information, choose formats and additional download options (like audio extraction, metadata embedding, subtitles, and more), and monitor download progress in real time.
+A sleek web-based interface for downloading videos and audio from YouTube and other platforms using [yt-dlp](https://github.com/yt-dlp/yt-dlp). This project combines a **React** front-end with a **FastAPI** back-end, allowing users to fetch video information, choose formats and additional download options, and monitor download progress in real time.
 
-## Features
+![Ren YT-DLP](https://github.com/renbkna/renytdlp/raw/main/frontend/public/screenshot.png)
 
-- **Video & Playlist Support:**  
-  Enter a video or playlist URL and choose whether to handle it as a playlist.
+## ✨ Features
 
-- **Format Selection & Options:**  
-  Select video formats or extract audio only. Choose additional options like embedding metadata, thumbnails, and subtitles.
+- **Video & Playlist Support**  
+  Download individual videos or entire playlists from YouTube and many other platforms
 
-- **Download Progress:**  
-  Monitor the progress of downloads with real-time status updates and progress bars.
+- **Audio Extraction**  
+  Extract audio in various formats (MP3, M4A, OPUS, FLAC, WAV, OGG) with customizable quality
 
-- **Dark/Light/System Theme:**  
-  Switch between dark, light, and system theme modes.
+- **Format Selection**  
+  Choose from available video formats with detailed information about resolution, codecs, and file size
 
-- **Built With:**
-  - [React](https://reactjs.org/)
-  - [Tailwind CSS](https://tailwindcss.com/)
-  - [FastAPI](https://fastapi.tiangolo.com/)
-  - [yt-dlp](https://github.com/yt-dlp/yt-dlp)
+- **Metadata Options**  
+  Embed metadata, thumbnails, and save additional information like descriptions and comments
 
-## Prerequisites
+- **Subtitle Support**  
+  Download subtitles in multiple languages with easy language selection
 
-### Front-End
+- **SponsorBlock Integration**  
+  Skip ads, intros, outros, and other segments automatically using SponsorBlock data
 
-- [Node.js](https://nodejs.org/) (v14 or later)
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+- **Download Progress Tracking**  
+  Monitor the progress of downloads with real-time status updates and progress bars
 
-### Back-End
+- **Beautiful Themes**  
+  Switch between "Kawaii Pastel" light theme and "Sewerslvt" dark theme
 
+## 🚀 Installation
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (v16 or later)
 - [Python 3.8+](https://www.python.org/downloads/)
-- [pip](https://pip.pypa.io/)
-
-## Installation
 
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/renbkna/yt-dlp-ui
-cd yt-dlp-ui
+git clone https://github.com/renbkna/renytdlp
+cd renytdlp
 ```
 
-### Set Up the FastAPI Back-End
+### Set Up the Backend
 
-1. **Create a Virtual Environment:**
-
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-2. **Install Dependencies:**
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-   *Note: When running in development mode (see below), the FastAPI back-end is started automatically.*
-
-### Set Up the React Front-End and Run Both Servers Concurrently
-
-1. **Navigate to the Front-End Directory:**
-
-   ```bash
-   cd frontend
-   ```
-
-2. **Install Dependencies:**
-
-   ```bash
-   npm install
-   ```
-
-   or, if you are using yarn:
-
-   ```bash
-   yarn install
-   ```
-
-3. **Start the Development Servers:**
-
-   Simply run:
-
-   ```bash
-   npm run dev
-   ```
-
-   This command uses the `concurrently` package to start both the FastAPI back-end (from the parent directory) and the React front-end (powered by Vite) together. The FastAPI server will run on port 8000, and the React app will be available (typically) at [http://localhost:5173](http://localhost:5173).
-
-## Audio Extraction vs. Native Audio Download
-
-The UI offers two approaches for obtaining audio-only files:
-
-- **Extract Audio Only (Post-Processing):**  
-  When you toggle **Extract Audio Only**, the back-end uses yt-dlp with the `bestaudio` parameter and adds an FFmpeg post-processor (via `FFmpegExtractAudio`). This converts the downloaded stream to your desired audio format (e.g., MP3) and quality. This extra step can be useful if:
-  - The source does not provide a native audio-only stream.
-  - You require a specific audio codec or container.
-
-- **Audio Only in Video Format Selector (Native):**  
-  Alternatively, if you choose an audio-only format from the video format selector, you are directly downloading an audio stream (such as an m4a or webm file) that is natively provided by the source. No additional conversion is needed, which means:
-  - There's no re-encoding step.
-  - The file is downloaded as-is, preserving the original quality.
-
-> **Note:**  
-> In yt-dlp, the `bestaudio` option selects the highest quality audio-only stream available. However, when using the **Extract Audio Only** option in our UI, an additional FFmpeg post-processing step is applied to convert the audio to your preferred format. This is why the two options may produce different outputs even though both aim to provide high-quality audio.
-
-## Understanding Quality Numbers and Format IDs
-
-- **Quality Numbers:**  
-  The numbers you see (e.g., format IDs like 137, 299, etc.) correspond to specific quality and resolution tiers. Generally, higher numbers indicate higher quality and larger file sizes. However, higher-quality streams may sometimes require cookies to bypass authentication or geo/age restrictions.
-
-- **Format IDs and Labels:**  
-  Our UI displays additional details such as resolution, frame rate (if available), codecs, and approximate file size. This helps you make an informed choice when selecting a format for download.
-
-## Project Structure
+1. Create a Python virtual environment:
 
 ```bash
-yt-dlp-web-ui/
-├── backend/
-│   ├── main.py           # FastAPI application
-│   └── ...               # Other Python modules/files
-├── frontend/
-│   ├── src/
-│   │   ├── App.tsx       # Main React component (includes theme switching, header, footer, etc.)
-│   │   ├── YTDLP.tsx     # Main component for video URL input, options, and download progress
-│   │   └── components/   # Other UI components (UrlTab, VideoInfoHeader, etc.)
-│   ├── package.json
-│   └── tailwind.config.js
-├── README.md
-└── ...
+cd server
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 ```
 
-## Usage
+2. Install dependencies:
 
-1. **Enter a URL:**  
-   On the front page, enter a video or playlist URL. The UI will auto-detect if it’s a playlist.
+```bash
+pip install -r requirements.txt
+```
 
-2. **Fetch Video Information:**  
-   Click the "Fetch" button to retrieve video information and available formats from the back-end.
+### Set Up the Frontend
 
-3. **Select Options:**  
-   Choose your desired download options such as video format, audio extraction, metadata embedding, subtitle options, etc.
+1. Navigate to the frontend directory:
 
-4. **Start Download:**  
-   Click the "Start Download" button. The back-end will initiate the download process and the UI will display real-time progress.
+```bash
+cd ../frontend
+```
 
-5. **Monitor Progress:**  
-   Once the download is complete, you can download another video or playlist by resetting the form.
+2. Install dependencies:
 
-## Credits
+```bash
+npm install
+```
 
-- **Project Built by:** [renbkna](https://github.com/renbkna)
-- **Powered by:** [yt-dlp](https://github.com/yt-dlp/yt-dlp)
-- **Inspired by:** The community effort to make video downloading safer and more efficient.
+## 🏃‍♀️ Running the Application
 
-## License
+### Development Mode
+
+1. Start the backend server:
+
+```bash
+cd server
+python main.py
+```
+
+2. In a separate terminal, start the frontend:
+
+```bash
+cd frontend
+npm run dev
+```
+
+The application will be available at http://localhost:5173
+
+### Production Mode
+
+1. Build the frontend:
+
+```bash
+cd frontend
+npm run build
+```
+
+2. Start the backend server:
+
+```bash
+cd server
+python main.py
+```
+
+3. The application will be available at http://localhost:8000
+
+## 📝 Usage Guide
+
+1. **Enter a URL**  
+   Enter a video or playlist URL from YouTube, TikTok, Twitter, or any other supported platform.
+
+2. **Fetch Video Information**  
+   Click "Get Video Information" to retrieve available formats and details.
+
+3. **Choose Download Options**  
+   - **Extract Audio Only**: Toggle this to download only the audio track
+   - **Video Format**: Select your preferred resolution and format
+   - **Metadata Options**: Choose what metadata to embed or save
+   - **Subtitle Options**: Select languages for subtitle download
+   - **Additional Features**: Enable SponsorBlock, cookies, and other advanced features
+
+4. **Start Download**  
+   Click "Start Download" and monitor progress in real-time
+
+5. **View Downloaded Files**  
+   Once complete, access your files in the downloads folder
+
+## 🎨 Themes
+
+Ren YT-DLP features two beautiful themes:
+
+- **Kawaii Pastel** (Light Mode): A soft, pastel-colored theme with pink and purple accents
+- **Sewerslvt** (Dark Mode): A dark theme with vibrant neon pink and cyan accents
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React, TypeScript, Tailwind CSS, Framer Motion
+- **Backend**: FastAPI, yt-dlp, Python
+- **Design**: Custom UI components, responsive design
+
+## 📜 License
 
 This project is licensed under the [MIT License](LICENSE).
 
-## Contributing
+## 🙏 Credits
 
-Contributions are welcome! Please fork the repository and submit a pull request for any enhancements or bug fixes.
+- **Project Built by**: [renbkna](https://github.com/renbkna/renytdlp)
+- **Powered by**: [yt-dlp](https://github.com/yt-dlp/yt-dlp)

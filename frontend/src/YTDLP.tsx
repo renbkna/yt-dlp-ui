@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Loader2, Settings, Download, AlertCircle, Youtube, List, Share2 } from "lucide-react"
+import { Loader2, Settings, Download, AlertCircle, Youtube, List, Share2, Music, Film, Sparkles } from "lucide-react"
 import type { DownloadOptions, VideoInfo, VideoFormat, DownloadStatus } from "@/types"
 import { useToast } from "@/components/ui/use-toast"
 import { AnimatePresence, motion } from "framer-motion"
@@ -244,28 +244,39 @@ const YTDLPPage = () => {
   }
 
   return (
-    <Card className="w-full max-w-4xl mx-auto shadow-lg border-violet-500/30 overflow-hidden bg-black">
-      <CardHeader className="border-b border-violet-500/30 bg-violet-900/20 py-4">
-        <CardTitle className="flex items-center gap-2">
-          <Youtube className="w-5 h-5 text-violet-400" />
-          <span className="text-xl text-white">
-            YT-DLP Web Interface
+    <Card className="w-full max-w-4xl mx-auto shadow-xl dark:border-primary/20 border-secondary/30 overflow-hidden
+      dark:bg-card/50 bg-card/80 rounded-2xl backdrop-blur-sm">
+      <CardHeader className="dark:border-b dark:border-primary/20 border-b border-secondary/20 
+        dark:bg-primary/5 bg-secondary/10 py-4">
+        <CardTitle className="flex items-center gap-3">
+          <div className="p-1.5 rounded-full dark:bg-primary/20 bg-secondary/20 flex items-center justify-center">
+            <Youtube className="w-5 h-5 dark:text-primary text-secondary-foreground" />
+          </div>
+          <span className="text-xl font-bold dark:text-white text-foreground">
+            Video & Audio Downloader
           </span>
+          <div className="hidden sm:block ml-auto">
+            <span className="text-xs px-2.5 py-1 rounded-full dark:bg-primary/10 bg-secondary/20 
+              dark:text-primary-foreground/80 text-secondary-foreground/80 font-medium">
+              Powered by yt-dlp
+            </span>
+          </div>
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="p-5 space-y-6">
+      <CardContent className="p-6 space-y-6">
         <AnimatePresence mode="wait">
           {error && (
             <motion.div 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="mb-4 p-3 bg-destructive/10 text-destructive rounded-md flex items-center gap-3 border border-destructive/30"
+              className="mb-4 p-4 dark:bg-destructive/10 bg-destructive/10 text-destructive rounded-lg flex items-center gap-3 
+                dark:border border-destructive/30 shadow-sm"
             >
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <div className="flex-1">
-                <p className="font-medium text-destructive">Error</p>
+                <p className="font-semibold text-destructive">Error</p>
                 <p className="text-sm opacity-90 text-destructive">{error}</p>
               </div>
               <Button 
@@ -280,25 +291,32 @@ const YTDLPPage = () => {
           )}
         </AnimatePresence>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
-          <TabsList className="grid w-full grid-cols-3 gap-4 p-1 h-auto bg-violet-900/20 rounded-lg border border-violet-500/30">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 gap-2 p-1.5 h-auto dark:bg-background/50 bg-background/50 rounded-xl 
+            dark:border border-secondary/20 dark:border-primary/20 shadow-sm">
             <TabsTrigger 
               value="download" 
-              className="flex items-center gap-2 data-[state=active]:bg-violet-900/50 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-300"
+              className="flex items-center gap-2 py-2.5 data-[state=active]:dark:bg-primary/20 data-[state=active]:bg-secondary/30
+                data-[state=active]:dark:text-white data-[state=active]:text-foreground data-[state=active]:shadow-sm 
+                transition-all duration-300 rounded-lg"
             >
               <Download className="w-4 h-4" /> URL
             </TabsTrigger>
             <TabsTrigger
               value="options"
               disabled={!videoInfo}
-              className="flex items-center gap-2 data-[state=active]:bg-violet-900/50 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-300"
+              className="flex items-center gap-2 py-2.5 data-[state=active]:dark:bg-primary/20 data-[state=active]:bg-secondary/30
+                data-[state=active]:dark:text-white data-[state=active]:text-foreground data-[state=active]:shadow-sm 
+                transition-all duration-300 rounded-lg"
             >
               <Settings className="w-4 h-4" /> Options
             </TabsTrigger>
             <TabsTrigger
               value="progress"
               disabled={!downloadStatus}
-              className="flex items-center gap-2 data-[state=active]:bg-violet-900/50 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-300"
+              className="flex items-center gap-2 py-2.5 data-[state=active]:dark:bg-primary/20 data-[state=active]:bg-secondary/30
+                data-[state=active]:dark:text-white data-[state=active]:text-foreground data-[state=active]:shadow-sm 
+                transition-all duration-300 rounded-lg"
             >
               <Loader2 className="w-4 h-4" /> Progress
             </TabsTrigger>
@@ -333,7 +351,8 @@ const YTDLPPage = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex items-center gap-2 border-violet-500/30 text-violet-300 hover:bg-violet-500/20 hover:text-white rounded-full px-3 h-8"
+                          className="flex items-center gap-2 dark:border-primary/30 border-secondary/30 dark:text-primary-foreground 
+                          text-secondary-foreground dark:hover:bg-primary/20 hover:bg-secondary/20 rounded-full px-3 h-8"
                           onClick={shareUrl}
                         >
                           <Share2 className="h-4 w-4" /> Share
@@ -341,40 +360,61 @@ const YTDLPPage = () => {
                       </div>
                     )}
 
-                    <div className="space-y-6">
-                      <Card className="overflow-hidden border-violet-500/30 shadow-lg bg-gradient-to-b from-black to-violet-950/40 rounded-xl">
-                        <CardHeader className="bg-violet-900/30 py-3">
-                          <CardTitle className="text-lg flex items-center gap-2 text-white">
-                            <Settings className="w-4 h-4" />
+                    <div className="space-y-5">
+                      <Card className="overflow-hidden dark:border-primary/20 border-secondary/30 shadow-md 
+                        dark:bg-card/80 bg-card/90 rounded-xl">
+                        <CardHeader className="dark:bg-primary/10 bg-secondary/10 py-3 px-4 border-b 
+                          dark:border-primary/20 border-secondary/20">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <Settings className="w-4 h-4 dark:text-primary text-secondary-foreground" />
                             Download Options
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-4 pt-6 space-y-5">
-                          <div className="p-3 bg-violet-900/20 rounded-lg border border-violet-500/30 flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
+                        <CardContent className="p-4 pt-5 space-y-5">
+                          <div className="p-4 dark:bg-primary/5 bg-secondary/10 rounded-lg dark:border border-primary/20 
+                            border-secondary/20 flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
                               <Switch
                                 id="extract-audio"
                                 checked={downloadOptions.extractAudio}
                                 onCheckedChange={(v) => updateDownloadOption("extractAudio", v)}
-                                className="data-[state=checked]:bg-violet-500"
+                                className="data-[state=checked]:dark:bg-primary data-[state=checked]:bg-secondary"
                               />
-                              <Label htmlFor="extract-audio" className="font-medium text-white">
-                                Extract audio only
-                              </Label>
+                              <div>
+                                <Label htmlFor="extract-audio" className="font-medium">
+                                  Extract audio only
+                                </Label>
+                                <p className="text-xs dark:text-primary-foreground/70 text-secondary-foreground/70 mt-0.5">
+                                  Download only the audio track
+                                </p>
+                              </div>
                             </div>
-                            <span className="text-xs bg-violet-500/20 text-violet-300 px-2 py-1 rounded-full border border-violet-500/30">
-                              {downloadOptions.extractAudio ? "Audio" : "Video + Audio"}
-                            </span>
+                            <div className="flex items-center">
+                              {downloadOptions.extractAudio ? (
+                                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full dark:bg-primary/20 bg-secondary/20">
+                                  <Music className="h-4 w-4 dark:text-primary text-secondary-foreground" />
+                                  <span className="text-xs dark:text-primary-foreground text-secondary-foreground font-medium">Audio Only</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full dark:bg-primary/10 bg-secondary/10">
+                                  <Film className="h-4 w-4 dark:text-primary-foreground/70 text-secondary-foreground/70" />
+                                  <span className="text-xs dark:text-primary-foreground/70 text-secondary-foreground/70 font-medium">Video + Audio</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           {downloadOptions.extractAudio ? (
                             <AudioOptions downloadOptions={downloadOptions} updateDownloadOption={updateDownloadOption} />
                           ) : videoInfo.is_playlist ? (
-                            <div className="text-violet-300 bg-violet-900/20 p-4 rounded-md border border-violet-500/30 flex items-center">
-                              <List className="w-5 h-5 mr-3 text-violet-400" />
+                            <div className="dark:text-primary-foreground text-secondary-foreground dark:bg-primary/5 bg-secondary/10 p-4 rounded-lg 
+                              dark:border border-primary/20 border-secondary/20 flex items-center">
+                              <List className="w-5 h-5 mr-3 dark:text-primary text-secondary-foreground" />
                               <div>
-                                <p className="font-medium text-white">Playlist detected</p>
-                                <p className="text-sm">Format selection not available - downloading all entries with best quality</p>
+                                <p className="font-medium">Playlist detected</p>
+                                <p className="text-sm dark:text-primary-foreground/70 text-secondary-foreground/70">
+                                  Format selection not available - downloading all entries with best quality
+                                </p>
                               </div>
                             </div>
                           ) : (
@@ -394,14 +434,18 @@ const YTDLPPage = () => {
 
                       <AdditionalFeatures downloadOptions={downloadOptions} updateDownloadOption={updateDownloadOption} />
 
-                      <Button
-                        className="w-full h-11 text-base bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 transition-all duration-300 shadow-md shadow-violet-900/30 rounded-lg font-medium"
-                        onClick={startDownload}
-                        disabled={!downloadOptions.format && !downloadOptions.extractAudio}
-                      >
-                        <Download className="w-5 h-5 mr-2" />
-                        Start Download
-                      </Button>
+                      <div className="pt-2">
+                        <Button
+                          className="w-full py-6 text-base font-semibold dark:bg-gradient-to-r dark:from-primary dark:to-accent/80 
+                            bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-all duration-300 
+                            dark:shadow-lg dark:shadow-primary/20 shadow-lg shadow-secondary/20 rounded-xl"
+                          onClick={startDownload}
+                          disabled={!downloadOptions.format && !downloadOptions.extractAudio}
+                        >
+                          <Download className="w-5 h-5 mr-2" />
+                          Start Download
+                        </Button>
+                      </div>
                     </div>
                   </>
                 )}
@@ -421,22 +465,34 @@ const YTDLPPage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50"
+            className="fixed inset-0 dark:bg-background/80 bg-background/60 backdrop-blur-sm flex items-center justify-center z-50"
           >
             <motion.div 
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.9 }}
-              className="flex flex-col items-center gap-4 p-6 bg-background rounded-xl shadow-xl border border-violet-500/30"
+              className="flex flex-col items-center gap-4 p-8 dark:bg-card bg-card rounded-xl shadow-xl 
+                dark:border border-primary/20 border-secondary/30"
             >
               <div className="relative">
-                <Loader2 className="h-10 w-10 animate-spin text-violet-400" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Youtube className="h-5 w-5 text-violet-400" />
+                <div className="w-16 h-16 rounded-full dark:bg-primary/10 bg-secondary/20 flex items-center justify-center">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin dark:text-primary text-secondary-foreground" />
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center animate-pulse">
+                    <Youtube className="h-5 w-5 dark:text-primary text-secondary-foreground" />
+                  </div>
                 </div>
               </div>
-              <p className="text-lg font-medium text-white">Fetching video information...</p>
-              <p className="text-sm text-violet-300">This may take a moment</p>
+              <div className="text-center">
+                <p className="text-lg font-medium">Fetching video information...</p>
+                <p className="text-sm dark:text-primary-foreground/70 text-secondary-foreground/70 mt-1">This may take a moment</p>
+              </div>
+              <div className="mt-1 flex gap-2">
+                <Sparkles className="h-4 w-4 dark:text-primary text-secondary-foreground animate-pulse" />
+                <Sparkles className="h-4 w-4 dark:text-accent text-primary animate-pulse delay-300" />
+                <Sparkles className="h-4 w-4 dark:text-primary text-secondary-foreground animate-pulse delay-700" />
+              </div>
             </motion.div>
           </motion.div>
         )}
