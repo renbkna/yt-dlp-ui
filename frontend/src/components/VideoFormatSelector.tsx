@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
-import { Search, Film, Filter, X, Check, HelpCircle, Download, CheckCircle, Music, PlayCircle, Video, Info } from "lucide-react"
+import { Search, Film, Filter, X, Check, HelpCircle, Download, Music, PlayCircle, Video, Sparkles } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { 
   Tooltip,
@@ -332,37 +332,41 @@ export function VideoFormatSelector({
 
   return (
     <div className="space-y-4">
-      {/* Best Quality Button - Resized to match other buttons */}
+      {/* Best Quality Button */}
       <Button
         variant="default"
         size="default"
-        className="w-full bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 transition-all duration-300 shadow-md shadow-violet-900/40 font-medium rounded-lg"
+        className="w-full py-3 dark:bg-gradient-to-r dark:from-primary dark:to-accent/80 
+          bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-all duration-300 
+          dark:shadow-md dark:shadow-primary/20 shadow-md shadow-secondary/20 rounded-xl font-medium"
         onClick={handleBestQualitySelect}
         disabled={!formats || formats.length === 0}
         data-testid="best-quality-button"
       >
-        <CheckCircle className={`w-4 h-4 mr-1.5 ${bestQualitySelected ? 'text-green-300' : ''}`} />
+        <Sparkles className={`w-4 h-4 mr-2 ${bestQualitySelected ? 'dark:text-green-300 text-green-300' : ''}`} />
         <span>
           {bestQualitySelected ? 'Best Quality Selected!' : 'Select Best Quality'}
         </span>
       </Button>
       
       <div className="flex items-center justify-center gap-2">
-        <div className="h-px bg-violet-500/20 flex-1" />
-        <span className="text-xs font-medium text-violet-300">OR SELECT MANUALLY</span>
-        <div className="h-px bg-violet-500/20 flex-1" />
+        <div className="h-px dark:bg-primary/20 bg-secondary/20 flex-1" />
+        <span className="text-xs font-medium dark:text-primary-foreground/70 text-secondary-foreground/70">OR SELECT MANUALLY</span>
+        <div className="h-px dark:bg-primary/20 bg-secondary/20 flex-1" />
       </div>
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Film className="h-5 w-5 text-violet-400" />
+          <Film className="h-5 w-5 dark:text-primary text-secondary-foreground" />
           <h3 className="text-lg font-medium">Available Formats</h3>
         </div>
         
         <div className="flex items-center gap-2 self-end sm:self-auto">
           <Badge 
             variant={showVideoOnly ? "default" : "outline"} 
-            className={`cursor-pointer ${showVideoOnly ? 'bg-violet-500 text-white hover:bg-violet-600 hover:text-white' : 'border-violet-500/40 text-violet-400 hover:bg-violet-500/20'}`}
+            className={`cursor-pointer ${showVideoOnly ? 
+              'dark:bg-primary bg-secondary dark:text-white text-white hover:dark:bg-primary/90 hover:bg-secondary/90' : 
+              'dark:border-primary/40 border-secondary/40 dark:text-primary-foreground text-secondary-foreground hover:dark:bg-primary/20 hover:bg-secondary/20'}`}
             onClick={() => {
               setShowVideoOnly(!showVideoOnly)
               if (!showVideoOnly) setShowAudioOnly(false)
@@ -374,7 +378,9 @@ export function VideoFormatSelector({
           
           <Badge 
             variant={showAudioOnly ? "default" : "outline"} 
-            className={`cursor-pointer ${showAudioOnly ? 'bg-violet-500 text-white hover:bg-violet-600 hover:text-white' : 'border-violet-500/40 text-violet-400 hover:bg-violet-500/20'}`}
+            className={`cursor-pointer ${showAudioOnly ? 
+              'dark:bg-primary bg-secondary dark:text-white text-white hover:dark:bg-primary/90 hover:bg-secondary/90' : 
+              'dark:border-primary/40 border-secondary/40 dark:text-primary-foreground text-secondary-foreground hover:dark:bg-primary/20 hover:bg-secondary/20'}`}
             onClick={() => {
               setShowAudioOnly(!showAudioOnly)
               if (!showAudioOnly) setShowVideoOnly(false)
@@ -392,13 +398,15 @@ export function VideoFormatSelector({
           placeholder="Search formats..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-9 pr-9 border-violet-500/20 focus:border-violet-500 bg-violet-900/10 rounded-lg"
+          className="pl-9 pr-9 dark:border-primary/30 border-secondary/30 dark:focus:border-primary focus:border-secondary 
+            dark:bg-background/50 bg-white/70 rounded-lg"
         />
         {searchTerm && (
           <Button 
             variant="ghost" 
             size="icon" 
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 hover:bg-violet-900/30"
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full 
+            dark:hover:bg-primary/20 hover:bg-secondary/20"
             onClick={() => setSearchTerm("")}
           >
             <X className="h-3 w-3" />
@@ -406,19 +414,20 @@ export function VideoFormatSelector({
         )}
       </div>
       
-      <div className="border border-violet-500/20 rounded-xl shadow-sm overflow-hidden">
+      <div className="dark:border-primary/20 border-secondary/30 border rounded-xl shadow-sm overflow-hidden">
         <ScrollArea className="h-[320px]">
           <RadioGroup 
             value={downloadOptions.format}
             onValueChange={(value) => updateDownloadOption("format", value)}
           >
             <Table>
-              <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm z-10 border-b border-violet-500/20">
-                <TableRow className="bg-violet-900/30">
+              <TableHeader className="sticky top-0 dark:bg-background/95 bg-white/95 backdrop-blur-sm z-10 
+                dark:border-b border-b dark:border-primary/20 border-secondary/20">
+                <TableRow className="dark:bg-primary/5 bg-secondary/10">
                   <TableHead className="w-[50px]"></TableHead>
-                  <TableHead className="w-[80px] text-violet-300">ID</TableHead>
-                  <TableHead className="text-violet-300">Format</TableHead>
-                  <TableHead className="text-right text-violet-300">Size</TableHead>
+                  <TableHead className="w-[80px] dark:text-primary-foreground/80 text-secondary-foreground/80">ID</TableHead>
+                  <TableHead className="dark:text-primary-foreground/80 text-secondary-foreground/80">Format</TableHead>
+                  <TableHead className="text-right dark:text-primary-foreground/80 text-secondary-foreground/80">Size</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -435,8 +444,8 @@ export function VideoFormatSelector({
                         key={format.format_id}
                         id={`format-${format.format_id}`}
                         className={`
-                          cursor-pointer transition-all hover:bg-violet-900/20
-                          ${isSelected ? 'bg-violet-900/30 hover:bg-violet-900/40 border-l-2 border-l-violet-500' : ''}
+                          cursor-pointer transition-all dark:hover:bg-primary/5 hover:bg-secondary/5
+                          ${isSelected ? 'dark:bg-primary/10 bg-secondary/10 dark:hover:bg-primary/20 hover:bg-secondary/20 dark:border-l-2 border-l-2 dark:border-l-primary border-l-secondary' : ''}
                         `}
                         onClick={() => updateDownloadOption("format", format.format_id)}
                       >
@@ -448,8 +457,8 @@ export function VideoFormatSelector({
                           />
                           <div className={`h-5 w-5 rounded-full flex items-center justify-center border-2 ${
                             isSelected 
-                              ? 'border-violet-500 bg-violet-500 text-white' 
-                              : 'border-violet-500/30'
+                              ? 'dark:border-primary border-secondary dark:bg-primary bg-secondary dark:text-white text-white' 
+                              : 'dark:border-primary/30 border-secondary/30'
                           }`}>
                             {isSelected && <Check className="h-3 w-3" />}
                           </div>
@@ -461,46 +470,50 @@ export function VideoFormatSelector({
                           <div className="flex flex-col">
                             <div className="font-medium flex items-center gap-2">
                               {!hasVideo && hasAudio ? (
-                                <Music className="h-4 w-4 text-blue-400" />
+                                <Music className="h-4 w-4 dark:text-blue-400 text-blue-500" />
                               ) : (
-                                <PlayCircle className="h-4 w-4 text-violet-400" />
+                                <PlayCircle className="h-4 w-4 dark:text-primary text-secondary" />
                               )}
                               
-                              <span className={isHighRes ? "text-white" : ""}>
+                              <span className={isHighRes ? "dark:text-white text-foreground" : ""}>
                                 {getResolutionLabel(format)}
                                 {format.format_note && format.format_note !== getResolutionLabel(format) && 
                                   ` • ${format.format_note}`}
                               </span>
                               
                               {isHighRes && hasVideo && hasAudio && (
-                                <Info className="h-3.5 w-3.5 text-green-400" />
+                                <Sparkles className="h-3.5 w-3.5 dark:text-green-400 text-green-500" />
                               )}
                             </div>
                             
                             <div className="flex flex-wrap gap-1 mt-1">
                               {hasVideo && (
-                                <Badge variant="outline" className={`text-xs py-0 h-5 border-violet-500/30 bg-violet-500/10 text-violet-300`}>
+                                <Badge variant="outline" className={`text-xs py-0 h-5 dark:border-primary/30 border-secondary/30 
+                                  dark:bg-primary/10 bg-secondary/10 dark:text-primary-foreground/80 text-secondary-foreground/80`}>
                                   Video: {format.vcodec?.split('.')[0]}
                                 </Badge>
                               )}
                               {hasAudio && (
-                                <Badge variant="outline" className={`text-xs py-0 h-5 border-violet-500/30 bg-violet-500/10 text-violet-300`}>
+                                <Badge variant="outline" className={`text-xs py-0 h-5 dark:border-primary/30 border-secondary/30 
+                                  dark:bg-primary/10 bg-secondary/10 dark:text-primary-foreground/80 text-secondary-foreground/80`}>
                                   Audio: {format.acodec?.split('.')[0]}
                                 </Badge>
                               )}
-                              <Badge variant="outline" className={`text-xs py-0 h-5 border-violet-500/30 bg-violet-500/10 text-violet-300`}>
+                              <Badge variant="outline" className={`text-xs py-0 h-5 dark:border-primary/30 border-secondary/30 
+                                dark:bg-primary/10 bg-secondary/10 dark:text-primary-foreground/80 text-secondary-foreground/80`}>
                                 .{format.ext}
                               </Badge>
                               
                               {hasVideo && hasAudio && (
-                                <Badge className="text-xs py-0 h-5 bg-violet-500/20 text-violet-300 border-violet-500/30">
+                                <Badge className="text-xs py-0 h-5 dark:bg-primary/20 bg-secondary/20 
+                                  dark:text-primary-foreground text-secondary-foreground dark:border-primary/30 border-secondary/30">
                                   Video+Audio
                                 </Badge>
                               )}
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
+                        <TableCell className="text-right font-mono text-sm dark:text-primary-foreground/80 text-secondary-foreground/80">
                           {formatFileSize(format.filesize)}
                         </TableCell>
                       </TableRow>
@@ -508,9 +521,9 @@ export function VideoFormatSelector({
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={4} className="text-center py-12 dark:text-primary-foreground/60 text-secondary-foreground/60">
                       <div className="flex flex-col items-center gap-3">
-                        <Filter className="h-8 w-8 text-muted-foreground/70" />
+                        <Filter className="h-8 w-8 dark:text-primary-foreground/40 text-secondary-foreground/40" />
                         <p>No formats match your filter criteria</p>
                         {(searchTerm || showAudioOnly || showVideoOnly) && (
                           <Button 
@@ -521,7 +534,8 @@ export function VideoFormatSelector({
                               setShowAudioOnly(false)
                               setShowVideoOnly(false)
                             }}
-                            className="mt-2 border-violet-500/30 text-violet-300 hover:bg-violet-500/20 rounded-full"
+                            className="mt-2 dark:border-primary/30 border-secondary/30 dark:text-primary-foreground 
+                              text-secondary-foreground dark:hover:bg-primary/20 hover:bg-secondary/20 rounded-full"
                           >
                             <X className="mr-1 h-3 w-3" /> Clear all filters
                           </Button>
@@ -540,21 +554,22 @@ export function VideoFormatSelector({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center text-sm text-violet-300">
+              <div className="flex items-center text-sm dark:text-primary-foreground/80 text-secondary-foreground/80">
                 <HelpCircle className="h-4 w-4 mr-1" />
                 <span>Format Selection Help</span>
               </div>
             </TooltipTrigger>
-            <TooltipContent className="max-w-xs bg-background border-violet-500/30">
-              <p>• <span className="font-bold text-white">High resolution formats</span> are highlighted</p>
-              <p>• <span className="font-bold text-white">Video+Audio</span> formats require no additional processing</p>
+            <TooltipContent className="max-w-xs dark:bg-background bg-white dark:border-primary/30 border-secondary/30">
+              <p>• <span className="font-bold">High resolution formats</span> are highlighted</p>
+              <p>• <span className="font-bold">Video+Audio</span> formats require no additional processing</p>
               <p>• File size is estimated and may vary</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
         
         {downloadOptions.format && (
-          <Badge variant="outline" className="px-3 py-1.5 bg-violet-500/10 border-violet-500/30 text-violet-200">
+          <Badge variant="outline" className="px-3 py-1.5 dark:bg-primary/10 bg-secondary/10 
+            dark:border-primary/30 border-secondary/30 dark:text-primary-foreground text-secondary-foreground">
             <Download className="h-3.5 w-3.5 mr-1.5" />
             Selected: <span className="font-mono ml-1.5 font-bold">{downloadOptions.format}</span>
           </Badge>

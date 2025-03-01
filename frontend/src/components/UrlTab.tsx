@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Loader2, Download, List, Clipboard, Link2, X } from 'lucide-react'
+import { Loader2, Download, List, Clipboard, X, Youtube, ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export interface UrlTabProps {
@@ -62,27 +62,35 @@ export const UrlTab: React.FC<UrlTabProps> = React.memo(
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="space-y-6"
+        className="space-y-7 py-2"
       >
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="url-input" className="text-lg font-medium flex items-center gap-2 text-white">
-              <Link2 className="h-5 w-5 text-violet-400" />
-              Enter video URL
-            </Label>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePaste}
-              type="button"
-              className={`h-8 relative overflow-hidden border-violet-500/30 text-violet-300 hover:bg-violet-500/20 hover:text-white hover:border-violet-500/60 rounded-full px-3 ${pasteAnimation ? 'border-green-500/60 text-green-300' : ''}`}
-            >
-              <Clipboard className="h-3.5 w-3.5 mr-1.5" /> 
-              {pasteAnimation ? 'Pasted!' : 'Paste'}
-            </Button>
+        <div className="space-y-5">
+          <div className="dark:border-b border-primary/10 pb-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="url-input" className="text-lg font-medium flex items-center gap-2">
+                <Youtube className="h-5 w-5 dark:text-primary text-secondary-foreground" />
+                Enter video URL
+              </Label>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePaste}
+                type="button"
+                className={`h-8 relative overflow-hidden dark:border-primary/30 border-secondary/30 
+                dark:text-primary-foreground text-secondary-foreground 
+                dark:hover:bg-primary/20 hover:bg-secondary/20
+                rounded-full px-3 ${pasteAnimation ? 'dark:border-success border-success dark:text-success text-success' : ''}`}
+              >
+                <Clipboard className="h-3.5 w-3.5 mr-1.5" /> 
+                {pasteAnimation ? 'Pasted!' : 'Paste'}
+              </Button>
+            </div>
+            <p className="text-sm dark:text-primary-foreground/70 text-secondary-foreground/70 mt-1">
+              Enter a URL from YouTube, TikTok, Twitter, or any other supported service
+            </p>
           </div>
           
-          <div className="relative group">
+          <div className="relative">
             <Input
               id="url-input"
               placeholder="https://www.youtube.com/watch?v=..."
@@ -90,7 +98,10 @@ export const UrlTab: React.FC<UrlTabProps> = React.memo(
               onChange={handleInputChange}
               onFocus={() => setUrlFocused(true)}
               onBlur={() => setUrlFocused(false)}
-              className={`h-12 px-4 text-base border-violet-500/30 bg-violet-900/20 focus:border-violet-500 text-white placeholder:text-violet-400/60 rounded-lg shadow-sm ${urlFocused ? 'border-violet-500 ring-1 ring-violet-500/50' : ''}`}
+              className={`h-12 pl-5 pr-12 text-base dark:border-primary/30 border-secondary/30 
+                dark:bg-background/60 bg-white/80 dark:focus:border-primary focus:border-secondary
+                dark:text-white text-foreground dark:placeholder:text-primary-foreground/40 placeholder:text-secondary-foreground/50
+                rounded-xl shadow-sm ${urlFocused ? 'dark:ring-2 dark:ring-primary/20 ring-2 ring-secondary/20' : ''}`}
             />
             
             {url && (
@@ -98,7 +109,8 @@ export const UrlTab: React.FC<UrlTabProps> = React.memo(
                 variant="ghost"
                 size="sm"
                 onClick={() => setUrl('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-violet-900/50 text-violet-300"
+                className="absolute right-3 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full 
+                dark:hover:bg-primary/20 hover:bg-secondary/20 dark:text-primary-foreground text-secondary-foreground"
                 type="button"
               >
                 <X className="h-4 w-4" />
@@ -106,44 +118,62 @@ export const UrlTab: React.FC<UrlTabProps> = React.memo(
             )}
           </div>
 
-          <div className="flex items-center space-x-2 px-4 py-3 bg-violet-900/20 rounded-lg border border-violet-500/20">
+          <div className="flex items-center space-x-2 px-5 py-4 dark:bg-primary/5 bg-secondary/10 
+            rounded-xl dark:border border-primary/20 border-secondary/20">
             <Switch
               id="playlist-mode"
               checked={isPlaylist}
               onCheckedChange={setIsPlaylist}
-              className="data-[state=checked]:bg-violet-500"
+              className="data-[state=checked]:dark:bg-primary data-[state=checked]:bg-secondary"
             />
-            <Label htmlFor="playlist-mode" className="flex items-center gap-1.5 cursor-pointer text-violet-200">
-              <List className="h-4 w-4 text-violet-400" />
-              <span>This is a playlist</span>
-            </Label>
+            <div className="ml-2">
+              <Label htmlFor="playlist-mode" className="flex items-center gap-1.5 cursor-pointer">
+                <List className="h-4 w-4 dark:text-primary text-secondary-foreground" />
+                <span>This is a playlist</span>
+              </Label>
+              <p className="text-xs dark:text-primary-foreground/70 text-secondary-foreground/70 mt-1">
+                Download all videos in the playlist
+              </p>
+            </div>
             
             {isPlaylist && (
-              <span className="ml-auto text-xs bg-violet-500/20 px-2 py-1 rounded-full border border-violet-500/30 text-violet-300">
-                Download all videos
+              <span className="ml-auto text-xs dark:bg-primary/20 bg-secondary/20 px-2.5 py-1 rounded-full 
+                dark:border border-primary/30 border-secondary/30 dark:text-primary-foreground text-secondary-foreground">
+                Playlist mode
               </span>
             )}
           </div>
         </div>
         
-        <Button 
-          onClick={fetchVideoInfo}
-          disabled={!url || loading}
-          size="lg"
-          className="w-full h-11 text-base bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 shadow-md shadow-violet-900/30 rounded-lg font-medium"
-        >
-          {loading ? (
-            <div className="flex items-center">
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              <span>Fetching video information...</span>
-            </div>
-          ) : (
-            <div className="flex items-center">
-              <Download className="mr-2 h-5 w-5" />
-              <span>Get Video Information</span>
-            </div>
-          )}
-        </Button>
+        <div className="pt-1">
+          <Button 
+            onClick={fetchVideoInfo}
+            disabled={!url || loading}
+            size="lg"
+            className="w-full py-6 text-base flex items-center justify-center dark:bg-gradient-to-r dark:from-primary dark:to-accent/80 
+              bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-all duration-300 
+              dark:shadow-lg dark:shadow-primary/20 shadow-lg shadow-secondary/20 rounded-xl"
+          >
+            {loading ? (
+              <div className="flex items-center">
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                <span>Fetching video information...</span>
+              </div>
+            ) : (
+              <div className="flex items-center">
+                <Download className="mr-2 h-5 w-5" />
+                <span className="font-medium">Get Video Information</span>
+                <ArrowRight className="h-4 w-4 ml-2 animate-pulse" />
+              </div>
+            )}
+          </Button>
+          
+          <div className="mt-5 flex items-center justify-center">
+            <p className="text-xs dark:text-primary-foreground/60 text-secondary-foreground/60 text-center">
+              Supports YouTube, TikTok, Twitter, Instagram, Soundcloud, and many more services
+            </p>
+          </div>
+        </div>
       </motion.div>
     )
   }

@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="A powerful web interface for yt-dlp, download videos and audio from YouTube, Vimeo, TikTok and hundreds of other sites." />
     <meta name="keywords" content="yt-dlp, youtube downloader, video downloader, audio extraction, YouTube, Vimeo, TikTok" />
     <meta name="author" content="renbkna" />
-    <meta name="theme-color" content="#6D28D9" />
+    <meta name="theme-color" content="#701a3f" />
     
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website" />
@@ -24,7 +24,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#6D28D9" />
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#701a3f" />
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,14 +32,30 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <title>Ren yt-dlp | Video Downloader</title>
+    <style>
+      :root {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #0c0a12;
+        color: #d1ccd7;
+      }
+      
+      .dark {
+        color-scheme: dark;
+      }
+    </style>
   </head>
-  <body class="theme-transition">
+  <body class="theme-transition scrollbar-thin">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <noscript>
-      <div style="padding: 2rem; text-align: center; max-width: 600px; margin: 0 auto;">
-        <h1 style="margin-bottom: 1rem;">JavaScript Required</h1>
-        <p>This application requires JavaScript to run. Please enable JavaScript in your browser settings and reload the page.</p>
+      <div style="padding: 2rem; text-align: center; max-width: 600px; margin: 2rem auto; background-color: #12111a; border: 1px solid #701a3f; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);">
+        <h1 style="margin-bottom: 1rem; color: #d1ccd7;">JavaScript Required</h1>
+        <p style="color: #a399ad;">This application requires JavaScript to run. Please enable JavaScript in your browser settings and reload the page.</p>
       </div>
     </noscript>
   </body>

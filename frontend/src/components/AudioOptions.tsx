@@ -18,43 +18,43 @@ export function AudioOptions({ downloadOptions, updateDownloadOption }: AudioOpt
       value: "mp3", 
       label: "MP3", 
       description: "Most compatible format",
-      icon: <FileAudio className="h-5 w-5 text-blue-500" />,
-      color: "border-blue-200 hover:border-blue-300 data-[state=checked]:border-blue-500 data-[state=checked]:bg-blue-50"
+      icon: <FileAudio className="h-5 w-5 dark:text-blue-400 text-blue-500" />,
+      color: "dark:border-primary/20 border-secondary/30 dark:data-[state=checked]:border-primary dark:data-[state=checked]:bg-primary/10 data-[state=checked]:border-secondary data-[state=checked]:bg-secondary/10"
     },
     { 
       value: "m4a", 
       label: "M4A", 
       description: "Better quality than MP3",
-      icon: <FileAudio className="h-5 w-5 text-purple-500" />,
-      color: "border-purple-200 hover:border-purple-300 data-[state=checked]:border-purple-500 data-[state=checked]:bg-purple-50"
+      icon: <FileAudio className="h-5 w-5 dark:text-purple-400 text-purple-500" />,
+      color: "dark:border-primary/20 border-secondary/30 dark:data-[state=checked]:border-primary dark:data-[state=checked]:bg-primary/10 data-[state=checked]:border-secondary data-[state=checked]:bg-secondary/10"
     },
     { 
       value: "opus", 
       label: "Opus", 
       description: "Best quality, less compatible",
-      icon: <Music className="h-5 w-5 text-green-500" />,
-      color: "border-green-200 hover:border-green-300 data-[state=checked]:border-green-500 data-[state=checked]:bg-green-50"
+      icon: <Music className="h-5 w-5 dark:text-green-400 text-green-500" />,
+      color: "dark:border-primary/20 border-secondary/30 dark:data-[state=checked]:border-primary dark:data-[state=checked]:bg-primary/10 data-[state=checked]:border-secondary data-[state=checked]:bg-secondary/10"
     },
     { 
       value: "wav", 
       label: "WAV", 
       description: "Lossless, very large files",
-      icon: <FileBadge className="h-5 w-5 text-red-500" />,
-      color: "border-red-200 hover:border-red-300 data-[state=checked]:border-red-500 data-[state=checked]:bg-red-50"
+      icon: <FileBadge className="h-5 w-5 dark:text-red-400 text-red-500" />,
+      color: "dark:border-primary/20 border-secondary/30 dark:data-[state=checked]:border-primary dark:data-[state=checked]:bg-primary/10 data-[state=checked]:border-secondary data-[state=checked]:bg-secondary/10"
     },
     { 
       value: "flac", 
       label: "FLAC", 
       description: "Lossless, compressed",
-      icon: <FileBadge className="h-5 w-5 text-amber-500" />,
-      color: "border-amber-200 hover:border-amber-300 data-[state=checked]:border-amber-500 data-[state=checked]:bg-amber-50"
+      icon: <FileBadge className="h-5 w-5 dark:text-amber-400 text-amber-500" />,
+      color: "dark:border-primary/20 border-secondary/30 dark:data-[state=checked]:border-primary dark:data-[state=checked]:bg-primary/10 data-[state=checked]:border-secondary data-[state=checked]:bg-secondary/10"
     },
     { 
       value: "vorbis", 
       label: "OGG", 
       description: "Open source format",
-      icon: <FileBadge className="h-5 w-5 text-teal-500" />,
-      color: "border-teal-200 hover:border-teal-300 data-[state=checked]:border-teal-500 data-[state=checked]:bg-teal-50"
+      icon: <FileBadge className="h-5 w-5 dark:text-teal-400 text-teal-500" />,
+      color: "dark:border-primary/20 border-secondary/30 dark:data-[state=checked]:border-primary dark:data-[state=checked]:bg-primary/10 data-[state=checked]:border-secondary data-[state=checked]:bg-secondary/10"
     },
   ]
   
@@ -73,13 +73,14 @@ export function AudioOptions({ downloadOptions, updateDownloadOption }: AudioOpt
   
   return (
     <TooltipProvider>
-      <Card className="border border-primary/20 shadow-md overflow-hidden">
-        <div className="h-1.5 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500"></div>
-        <CardContent className="pt-6">
-          <div className="space-y-8">
+      <Card className="dark:border-primary/20 border-secondary/30 shadow-md overflow-hidden rounded-xl">
+        <div className="h-1.5 dark:bg-gradient-to-r dark:from-primary dark:via-accent dark:to-purple-500 
+          bg-gradient-to-r from-secondary via-primary to-accent"></div>
+        <CardContent className="p-5">
+          <div className="space-y-6">
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <Headphones className="h-5 w-5 text-primary" />
+                <Headphones className="h-5 w-5 dark:text-primary text-secondary-foreground" />
                 <h3 className="text-lg font-medium">Audio Format</h3>
               </div>
               
@@ -98,11 +99,11 @@ export function AudioOptions({ downloadOptions, updateDownloadOption }: AudioOpt
                         <Label
                           htmlFor={`format-${format.value}`}
                           className={`
-                            relative flex flex-col p-4 border-2 rounded-lg cursor-pointer transition-all
+                            relative flex flex-col p-4 border rounded-lg cursor-pointer transition-all
                             ${format.color}
                             ${downloadOptions.audioFormat === format.value 
                               ? 'shadow-md' 
-                              : 'hover:shadow-sm'
+                              : 'dark:hover:border-primary/40 hover:border-secondary/50 hover:shadow-sm'
                             }
                           `}
                         >
@@ -122,14 +123,14 @@ export function AudioOptions({ downloadOptions, updateDownloadOption }: AudioOpt
                               <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                className="h-5 w-5 rounded-full bg-primary flex items-center justify-center text-white"
+                                className="h-5 w-5 rounded-full dark:bg-primary bg-secondary flex items-center justify-center text-white"
                               >
                                 <Check className="h-3 w-3" />
                               </motion.div>
                             )}
                           </div>
                           
-                          <span className="text-xs text-muted-foreground mt-2">{format.description}</span>
+                          <span className="text-xs dark:text-primary-foreground/70 text-secondary-foreground/70 mt-2">{format.description}</span>
                         </Label>
                       </div>
                     </TooltipTrigger>
@@ -141,14 +142,15 @@ export function AudioOptions({ downloadOptions, updateDownloadOption }: AudioOpt
               </RadioGroup>
             </div>
             
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-primary" />
+                  <Activity className="h-5 w-5 dark:text-primary text-secondary-foreground" />
                   <h3 className="text-lg font-medium">Audio Quality</h3>
                 </div>
                 
-                <div className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                <div className="px-3 py-1 rounded-full dark:bg-primary/10 bg-secondary/10 
+                  dark:text-primary-foreground text-secondary-foreground text-sm font-medium">
                   {getQualityLabel(downloadOptions.audioQuality)}
                 </div>
               </div>
@@ -158,7 +160,7 @@ export function AudioOptions({ downloadOptions, updateDownloadOption }: AudioOpt
                   value={downloadOptions.audioQuality}
                   onValueChange={(value) => updateDownloadOption("audioQuality", value)}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full dark:border-primary/30 border-secondary/30">
                     <SelectValue placeholder="Select audio quality" />
                   </SelectTrigger>
                   <SelectContent>
@@ -172,25 +174,27 @@ export function AudioOptions({ downloadOptions, updateDownloadOption }: AudioOpt
                 
                 <div className="flex items-center justify-between px-1 mt-4">
                   <div className="flex flex-col items-center">
-                    <Volume2 className="h-6 w-6 text-green-500" />
-                    <span className="text-xs text-muted-foreground mt-1">Highest</span>
+                    <Volume2 className="h-6 w-6 dark:text-green-400 text-green-500" />
+                    <span className="text-xs dark:text-primary-foreground/70 text-secondary-foreground/70 mt-1">Highest</span>
                   </div>
                   
                   <div className="hidden sm:block">
-                    <span className="text-xs text-muted-foreground px-1 py-0.5 rounded-full border">
+                    <span className="text-xs dark:text-primary-foreground/80 text-secondary-foreground/80 px-2 py-0.5 rounded-full 
+                      dark:border-primary/20 border-secondary/20 border">
                       Value: {downloadOptions.audioQuality}
                     </span>
                   </div>
                   
                   <div className="flex flex-col items-center">
-                    <Volume2 className="h-4 w-4 text-yellow-500" />
-                    <span className="text-xs text-muted-foreground mt-1">Lowest</span>
+                    <Volume2 className="h-4 w-4 dark:text-yellow-400 text-yellow-500" />
+                    <span className="text-xs dark:text-primary-foreground/70 text-secondary-foreground/70 mt-1">Lowest</span>
                   </div>
                 </div>
               </div>
               
-              <div className="text-xs text-muted-foreground p-3 bg-muted/30 rounded-md border border-border/50">
-                <p className="flex items-center gap-1">
+              <div className="text-xs dark:text-primary-foreground/70 text-secondary-foreground/70 p-3 
+                dark:bg-primary/5 bg-secondary/5 rounded-md dark:border-primary/20 border-secondary/20 border">
+                <p className="flex items-center gap-1.5">
                   <FileBadge className="h-3.5 w-3.5 inline" />
                   <span>
                     Lower values (0-3) produce larger files with better quality. Higher values (7-9) reduce file size but may affect audio quality.
