@@ -2,7 +2,7 @@
 
 A sleek web-based interface for downloading videos and audio from YouTube and other platforms using [yt-dlp](https://github.com/yt-dlp/yt-dlp). This project combines a **React** front-end with a **FastAPI** back-end, allowing users to fetch video information, choose formats and additional download options, and monitor download progress in real time.
 
-![Ren YT-DLP](https://github.com/renbkna/renytdlp/raw/main/frontend/public/screenshot.png)
+![Ren YT-DLP](https://github.com/renbkna/renytdlp/raw/main/frontend/public/yt-dlp-ui.png)
 
 ## ✨ Features
 
@@ -28,7 +28,7 @@ A sleek web-based interface for downloading videos and audio from YouTube and ot
   Monitor the progress of downloads with real-time status updates and progress bars
 
 - **Beautiful Themes**  
-  Switch between "Kawaii Pastel" light theme and "Sewerslvt" dark theme
+  Switch between light theme and dark theme
 
 ## 🚀 Installation
 
@@ -137,8 +137,8 @@ python main.py
 
 Ren YT-DLP features two beautiful themes:
 
-- **Kawaii Pastel** (Light Mode): A soft, pastel-colored theme with pink and purple accents
-- **Sewerslvt** (Dark Mode): A dark theme with vibrant neon pink and cyan accents
+- **Light Theme** : A soft, pastel-colored theme with pink and purple accents
+- **Dark Theme** : A dark theme with vibrant neon pink and cyan accents
 
 ## 🛠️ Tech Stack
 
