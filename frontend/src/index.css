@@ -73,7 +73,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
   }
 }
 
@@ -140,29 +140,31 @@
   h6 {
     @apply text-base md:text-lg;
   }
-  
+
   /* Text contrast based on theme */
   .dark p {
     @apply text-slate-300;
   }
-  
-  .dark small, .dark .text-sm {
+
+  .dark small,
+  .dark .text-sm {
     @apply text-slate-400;
   }
-  
+
   .dark .text-muted-foreground {
     @apply text-slate-500;
   }
-  
+
   /* Light mode text */
   p {
     @apply text-slate-800;
   }
-  
-  small, .text-sm {
+
+  small,
+  .text-sm {
     @apply text-slate-700;
   }
-  
+
   .text-muted-foreground {
     @apply text-slate-600;
   }
@@ -185,7 +187,7 @@
   .dark .card-glass {
     @apply bg-background/70 backdrop-blur-lg border border-primary/20;
   }
-  
+
   .card-glass {
     @apply bg-white/70 backdrop-blur-lg border border-secondary/30;
   }
@@ -199,7 +201,7 @@
     @apply content-[''] absolute -inset-[100%] bg-gradient-to-r from-transparent via-primary/10 to-transparent opacity-0 transition-all duration-1000 ease-in-out;
     transform: rotate(30deg);
   }
-  
+
   .glow::after {
     @apply content-[''] absolute -inset-[100%] bg-gradient-to-r from-transparent via-secondary/30 to-transparent opacity-0 transition-all duration-1000 ease-in-out;
     transform: rotate(30deg);
@@ -217,24 +219,24 @@
   .dark .high-contrast-border {
     @apply border border-primary/30;
   }
-  
+
   .dark .high-contrast-bg {
     @apply bg-primary/15;
   }
-  
+
   .dark .high-contrast-text {
     @apply text-primary-foreground;
   }
-  
+
   /* Light mode */
   .high-contrast-border {
     @apply border border-secondary/40;
   }
-  
+
   .high-contrast-bg {
     @apply bg-secondary/20;
   }
-  
+
   .high-contrast-text {
     @apply text-secondary-foreground;
   }
@@ -254,37 +256,37 @@
   .pastel-card {
     @apply bg-gradient-to-br from-secondary/50 to-primary/30 border-2 border-primary/30 shadow-xl rounded-3xl;
   }
-  
+
   .pastel-button {
     @apply bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 
     text-primary-foreground rounded-full shadow-md font-medium transition-all duration-300;
   }
-  
+
   .pastel-input {
     @apply bg-white/70 border-2 border-primary/30 rounded-full focus:border-primary/70 focus:ring-2 
     focus:ring-primary/30 transition-all duration-300;
   }
-  
+
   /* Sewerslvt dark style elements */
   .dark .sewerslvt-card {
     @apply bg-gradient-to-br from-background to-primary/5 border border-primary/20 shadow-lg rounded-lg;
   }
-  
+
   .dark .sewerslvt-button {
     @apply bg-gradient-to-r from-primary/70 to-accent/40 hover:from-primary/80 hover:to-accent/50 
     text-primary-foreground rounded-md shadow-lg font-medium transition-all duration-300;
   }
-  
+
   .dark .sewerslvt-input {
     @apply bg-background border border-primary/20 rounded-md focus:border-primary/40 focus:ring-2 
     focus:ring-primary/20 transition-all duration-300;
   }
-  
+
   /* Badge styles */
   .kawaii-badge {
     @apply px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary/30 text-secondary-foreground;
   }
-  
+
   .dark .sewerslvt-badge {
     @apply px-2 py-0.5 rounded-md text-xs font-medium bg-primary/15 text-primary-foreground;
   }
@@ -298,7 +300,7 @@
     background-size: 400% 400%;
     animation: gradient 15s ease infinite;
   }
-  
+
   .animated-gradient-light {
     @apply relative;
     background: linear-gradient(-45deg, #ffb7e5, #a78bfa, #7dd3fc, #ffb7e5);
