@@ -7,6 +7,8 @@ import {
   ExternalLink,
   Info,
   Loader2,
+  Cookie,
+  KeyRound
 } from "lucide-react";
 import { FaChrome, FaFirefox, FaSafari, FaEdge } from "react-icons/fa";
 import { API_BASE } from "@/types";
@@ -17,6 +19,12 @@ interface BrowserStatus {
   message: string;
 }
 
+interface CookieStatus {
+  browser_cookies_available: boolean;
+  client_cookies_supported: boolean;
+  message: string;
+}
+
 interface YoutubeAuthErrorProps {
   onRetry: () => void;
   error: string;
@@ -24,6 +32,7 @@ interface YoutubeAuthErrorProps {
 
 export function YoutubeAuthError({ onRetry, error }: YoutubeAuthErrorProps) {
   const [browserStatus, setBrowserStatus] = useState<BrowserStatus | null>(null);
+  const [cookieStatus, setCookieStatus] = useState<CookieStatus | null>(null);
   const [checkingStatus, setCheckingStatus] = useState(false);
   
   // Check if this is a YouTube authentication error
@@ -33,22 +42,30 @@ export function YoutubeAuthError({ onRetry, error }: YoutubeAuthErrorProps) {
 
   useEffect(() => {
     if (isYoutubeAuthError) {
-      checkBrowserStatus();
+      checkServerStatus();
     }
   }, [isYoutubeAuthError]);
 
-  const checkBrowserStatus = async () => {
+  const checkServerStatus = async () => {
     setCheckingStatus(true);
     try {
-      const response = await fetch(`${API_BASE}/browser_status`);
-      if (response.ok) {
-        const data = await response.json();
+      // Check both browser and cookie status
+      const [browserResponse, cookieResponse] = await Promise.all([
+        fetch(`${API_BASE}/browser_status`),
+        fetch(`${API_BASE}/cookie_status`)
+      ]);
+      
+      if (browserResponse.ok) {
+        const data = await browserResponse.json();
         setBrowserStatus(data);
-      } else {
-        console.error("Failed to check browser status:", await response.text());
+      }
+      
+      if (cookieResponse.ok) {
+        const data = await cookieResponse.json();
+        setCookieStatus(data);
       }
     } catch (error) {
-      console.error("Error checking browser status:", error);
+      console.error("Error checking server status:", error);
     } finally {
       setCheckingStatus(false);
     }
@@ -95,40 +112,60 @@ export function YoutubeAuthError({ onRetry, error }: YoutubeAuthErrorProps) {
           <li>The content requires a signed-in account to access</li>
         </ul>
         
-        {browserStatus ? (
+        {/* Server Browser Status */}
+        {browserStatus && (
           <div className={`p-3 rounded-lg border ${
             browserStatus.is_available 
               ? 'bg-green-50 dark:bg-green-950/10 border-green-200 dark:border-green-800/30' 
-              : 'bg-red-50 dark:bg-red-950/10 border-red-200 dark:border-red-800/30'
+              : 'bg-amber-50 dark:bg-amber-950/10 border-amber-200 dark:border-amber-800/30'
           } mb-3`}>
             <div className="flex items-center gap-2">
               {getBrowserIcon(browserStatus.browser)}
               <p className={`text-sm font-medium ${
                 browserStatus.is_available 
                   ? 'text-green-700 dark:text-green-400' 
-                  : 'text-red-700 dark:text-red-400'
+                  : 'text-amber-700 dark:text-amber-400'
               }`}>
-                {browserStatus.browser.charAt(0).toUpperCase() + browserStatus.browser.slice(1)} 
+                Server {browserStatus.browser.charAt(0).toUpperCase() + browserStatus.browser.slice(1)} 
                 {browserStatus.is_available ? ' is available' : ' is not available'}
               </p>
             </div>
             <p className="text-xs mt-1 text-muted-foreground">
               {browserStatus.is_available 
-                ? 'The server will use browser cookies for authentication.' 
-                : 'The server does not have browser cookies available.'}
+                ? 'The server has a browser available for cookie extraction.' 
+                : 'No server browser available. Client-side cookies will be used.'}
             </p>
           </div>
-        ) : (
+        )}
+
+        {/* Client-Side Cookie Support Status */}
+        {cookieStatus && (
+          <div className="p-3 rounded-lg border bg-blue-50 dark:bg-blue-950/10 border-blue-200 dark:border-blue-800/30 mb-3">
+            <div className="flex items-center gap-2">
+              <Cookie className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <p className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                Client-side cookie extraction available
+              </p>
+            </div>
+            <p className="text-xs mt-1 text-muted-foreground">
+              {cookieStatus.browser_cookies_available 
+                ? 'Both server browser and client-side cookies can be used for authentication.' 
+                : 'Client-side cookie extraction is recommended since server browser is unavailable.'}
+            </p>
+          </div>
+        )}
+        
+        {!browserStatus && !cookieStatus && (
           <div className="p-3 rounded-lg border border-amber-200 dark:border-amber-800/30 bg-amber-50/50 dark:bg-amber-950/10 mb-3 flex items-center gap-2">
             {checkingStatus ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin text-amber-500" />
-                <p className="text-sm text-amber-700 dark:text-amber-400">Checking browser availability...</p>
+                <p className="text-sm text-amber-700 dark:text-amber-400">Checking server status...</p>
               </>
             ) : (
               <>
                 <Info className="h-5 w-5 text-amber-500" />
-                <p className="text-sm text-amber-700 dark:text-amber-400">Browser status unknown</p>
+                <p className="text-sm text-amber-700 dark:text-amber-400">Server cookie status unknown</p>
               </>
             )}
           </div>
@@ -137,17 +174,17 @@ export function YoutubeAuthError({ onRetry, error }: YoutubeAuthErrorProps) {
         <div className="text-sm text-amber-700/90 dark:text-amber-400/90">
           <p className="font-medium mb-1">What's happening?</p>
           <p className="mb-2">
-            The server tries to use browser cookies to authenticate with YouTube.
-            {browserStatus?.is_available 
-              ? " Browser cookies are available, but may need to be refreshed." 
-              : " However, the necessary browser is not available on the server."}
+            YouTube requires authentication cookies to verify you're not a bot. 
+            {(cookieStatus?.client_cookies_supported && !browserStatus?.is_available) 
+              ? " Our new client-side cookie extraction can help with this issue." 
+              : " The server will try to use available browser cookies."}
           </p>
           
-          <p className="font-medium mb-1">Possible solutions:</p>
+          <p className="font-medium mb-1">Recommended actions:</p>
           <ol className="list-decimal pl-5 text-sm text-amber-700/80 dark:text-amber-400/80 space-y-1">
-            <li>Try again - sometimes temporary issues resolve themselves</li>
+            <li><span className="font-medium">Enable cookies in download options</span> - This will extract cookies from your browser</li>
             <li>Try a different video that doesn't require authentication</li>
-            <li>Contact the server administrator to ensure proper browser setup</li>
+            <li>Sign in to YouTube in your browser, then try again with cookie extraction enabled</li>
           </ol>
         </div>
       </CardContent>
@@ -156,7 +193,7 @@ export function YoutubeAuthError({ onRetry, error }: YoutubeAuthErrorProps) {
           variant="outline" 
           size="sm" 
           className="text-amber-700 dark:text-amber-400 border-amber-500/30 dark:border-amber-500/50 hover:bg-amber-100/50 dark:hover:bg-amber-950/50"
-          onClick={() => window.open("https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp", "_blank")}
+          onClick={() => window.open("https://github.com/renbkna/renytdlp", "_blank")}
         >
           <ExternalLink className="h-4 w-4 mr-1" />
           Learn More
@@ -167,7 +204,7 @@ export function YoutubeAuthError({ onRetry, error }: YoutubeAuthErrorProps) {
             variant="outline" 
             size="sm"
             className="text-amber-700 dark:text-amber-400 border-amber-500/30 dark:border-amber-500/50 hover:bg-amber-100/50 dark:hover:bg-amber-950/50"
-            onClick={checkBrowserStatus}
+            onClick={checkServerStatus}
             disabled={checkingStatus}
           >
             {checkingStatus ? (
@@ -184,8 +221,8 @@ export function YoutubeAuthError({ onRetry, error }: YoutubeAuthErrorProps) {
             className="bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-800 text-white"
             onClick={onRetry}
           >
-            <RefreshCw className="h-4 w-4 mr-1" />
-            Try Again
+            <KeyRound className="h-4 w-4 mr-1" />
+            Try With Auth
           </Button>
         </div>
       </CardFooter>

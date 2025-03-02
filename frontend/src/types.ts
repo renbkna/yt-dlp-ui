@@ -1,3 +1,13 @@
+export interface ClientCookie {
+  domain: string;
+  name: string;
+  value: string;
+  path: string;
+  secure: boolean;
+  httpOnly: boolean;
+  expirationDate?: number;
+}
+
 export interface DownloadOptions {
   format: string
   extractAudio: boolean
@@ -9,7 +19,8 @@ export interface DownloadOptions {
   downloadSubtitles: boolean
   subtitleLanguages: string[]
   quality: string
-  useBrowserCookies: boolean;
+  useBrowserCookies: boolean
+  clientCookies?: ClientCookie[] // New field for client-side cookies
   writeDescription: boolean
   writeComments: boolean
   writeThumbnail: boolean
@@ -57,6 +68,13 @@ export interface DownloadStatus {
   error?: string
   speed?: string
   eta?: number
+}
+
+export interface CookieStatus {
+  browser_cookies_available: boolean;
+  client_cookies_supported: boolean;
+  cookie_file_path?: string;
+  message: string;
 }
 
 // Use environment variable for API_BASE, ensuring it has the correct format
