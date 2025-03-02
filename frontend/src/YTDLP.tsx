@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Loader2, Settings, Download, AlertCircle, Youtube, List, Share2, Music, Film, Sparkles } from "lucide-react"
-import type { DownloadOptions, VideoInfo, VideoFormat, DownloadStatus } from "@/types"
+import type { DownloadOptions, VideoInfo, VideoFormat, DownloadStatus, ClientCookie } from "@/types"
 import { useToast } from "@/components/ui/use-toast"
 import { AnimatePresence, motion } from "framer-motion"
 import { UrlTab } from "@/components/UrlTab"
@@ -66,6 +66,87 @@ const YTDLPPage = () => {
     setDownloadOptions((prev) => ({ ...prev, [key]: value }))
   }
 
+  // Target domains and important cookie names for YouTube
+  const targetDomains = ['youtube.com', 'www.youtube.com', '.youtube.com', 'youtu.be', 'google.com', '.google.com'];
+  const importantCookieNames = [
+    'LOGIN_INFO',
+    'SID',
+    'HSID',
+    'SSID',
+    'APISID',
+    'SAPISID',
+    'CONSENT',
+    '__Secure-1PSID',
+    '__Secure-3PSID',
+    '__Secure-1PAPISID',
+    '__Secure-3PAPISID',
+    'YSC',
+    'VISITOR_INFO1_LIVE'
+  ];
+
+  // Extract cookies from the browser
+  const extractCookies = async (): Promise<ClientCookie[]> => {
+    try {
+      // Create an empty array to hold extracted cookies
+      const cookies: ClientCookie[] = [];
+      
+      // Get all cookies from document.cookie
+      const currentCookies = document.cookie.split(';');
+      
+      for (const cookieStr of currentCookies) {
+        try {
+          const [name, value] = cookieStr.trim().split('=');
+          if (name && value) {
+            // Check if this is a YouTube related cookie
+            const isYouTubeCookie = importantCookieNames.includes(name.trim()) || 
+              targetDomains.some(domain => name.trim().includes(domain));
+            
+            if (isYouTubeCookie) {
+              cookies.push({
+                domain: 'youtube.com', // Default to youtube.com
+                name: name.trim(),
+                value: value,
+                path: '/',
+                secure: true,
+                httpOnly: false
+              });
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to parse cookie:", cookieStr);
+        }
+      }
+      
+      // If we're on YouTube, try to extract more cookies using document.domain
+      if (window.location.hostname.includes('youtube.com')) {
+        cookies.push({
+          domain: 'youtube.com',
+          name: '_special_extracted_from_youtube',
+          value: 'true',
+          path: '/',
+          secure: true,
+          httpOnly: false
+        });
+      }
+      
+      // Update state with extracted cookies
+      if (cookies.length > 0) {
+        setDownloadOptions(prev => ({
+          ...prev,
+          useBrowserCookies: true,
+          clientCookies: cookies
+        }));
+        
+        console.log(`Extracted ${cookies.length} cookies from browser`);
+      }
+      
+      return cookies;
+    } catch (err) {
+      console.error("Error extracting cookies:", err);
+      return [];
+    }
+  };
+
   const fetchVideoInfo = async () => {
     if (!url) {
       toast({
@@ -79,29 +160,43 @@ const YTDLPPage = () => {
     setLoading(true)
     setError(null)
     try {
-      console.log(`Fetching video info from: ${API_BASE}/info?url=${encodeURIComponent(url)}`);
+      console.log(`Fetching video info for URL: ${url}`);
       
-      // Add client cookies to the request if available
-      let infoUrl = `${API_BASE}/info?url=${encodeURIComponent(url)}&is_playlist=${isPlaylist}`;
-      let formatsUrl = `${API_BASE}/formats?url=${encodeURIComponent(url)}&is_playlist=${isPlaylist}`;
-      
-      // If we have client cookies, add them to the request body
-      const fetchOptions: RequestInit = {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
+      // Extract cookies first if they are not already available
+      if (!downloadOptions.clientCookies || downloadOptions.clientCookies.length === 0) {
+        try {
+          const cookies = await extractCookies();
+          console.log(`Extracted ${cookies.length} cookies from browser for initial fetch`);
+        } catch (err) {
+          console.warn("Failed to extract cookies:", err);
         }
-      };
-
-      // If client cookies are available, send them in the request
-      if (downloadOptions.useBrowserCookies && downloadOptions.clientCookies && downloadOptions.clientCookies.length > 0) {
-        console.log(`Using ${downloadOptions.clientCookies.length} client cookies for authentication`);
       }
       
+      // Prepare request payload for video info - use POST to send cookies directly
+      const infoPayload = {
+        url: url,
+        is_playlist: isPlaylist,
+        cookies: downloadOptions.clientCookies
+      };
+      
+      console.log("Sending request with cookies:", {
+        ...infoPayload,
+        cookies: downloadOptions.clientCookies ? 
+          `[${downloadOptions.clientCookies.length} cookies]` : "none"
+      });
+      
+      // Use POST to send cookies directly in request body
       const [infoResponse, formatsResponse] = await Promise.all([
-        fetch(infoUrl, fetchOptions),
-        fetch(formatsUrl, fetchOptions),
-      ])
+        fetch(`${API_BASE}/info`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(infoPayload)
+        }),
+        fetch(`${API_BASE}/formats?url=${encodeURIComponent(url)}&is_playlist=${isPlaylist}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        })
+      ]);
       
       if (!infoResponse.ok) {
         console.error(`Info response error: ${infoResponse.status} ${infoResponse.statusText}`);
@@ -192,7 +287,10 @@ const YTDLPPage = () => {
         chapters_from_comments: downloadOptions.chaptersFromComments,
       };
       
-      console.log("Download request body:", {...requestBody, client_cookies: `[${downloadOptions.clientCookies?.length || 0} cookies]`});
+      console.log("Download request body:", {
+        ...requestBody, 
+        client_cookies: `[${downloadOptions.clientCookies?.length || 0} cookies]`
+      });
       
       const response = await fetch(`${API_BASE}/download`, {
         method: "POST",
@@ -443,6 +541,7 @@ const YTDLPPage = () => {
                     fetchVideoInfo={fetchVideoInfo}
                     isPlaylist={isPlaylist}
                     setIsPlaylist={setIsPlaylist}
+                    extractCookies={extractCookies}
                   />
                 </TabsContent>
 
