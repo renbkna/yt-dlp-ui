@@ -34,6 +34,7 @@
     "radio-group": "^0.0.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-icons": "^5.5.0",
     "shadcn": "^2.3.0",
     "sonner": "^1.7.2",
     "tailwind-merge": "^2.6.0",

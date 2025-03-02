@@ -208,4 +208,4 @@ This project is licensed under the [MIT License](LICENSE).
 ## 🙏 Credits
 
 - **Project Built by**: [renbkna](https://github.com/renbkna/renytdlp)
-- **Powered by**: [yt-dlp](https://github.com/yt-dlp/yt-dlp)
+- **Powered by**: [yt-dlp](https://github.com/yt-dlp/yt-dlp-ui)
