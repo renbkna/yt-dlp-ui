@@ -59,7 +59,15 @@ export interface DownloadStatus {
   eta?: number
 }
 
-// Use environment variable for API_BASE if available, or fallback to localhost
-export const API_BASE = import.meta.env.VITE_API_URL ? 
-  `${import.meta.env.VITE_API_URL}/api` : 
-  'http://localhost:8000/api';
+// Use environment variable for API_BASE, ensuring it has the correct format
+const getApiBase = () => {
+  if (import.meta.env.VITE_API_URL) {
+    const baseUrl = import.meta.env.VITE_API_URL.toString();
+    // Remove trailing slash if present
+    const normalizedUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    return `${normalizedUrl}/api`;
+  }
+  return 'http://localhost:8000/api';
+};
+
+export const API_BASE = getApiBase();
