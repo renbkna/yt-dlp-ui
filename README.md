@@ -60,6 +60,14 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+3. Set up environment variables:
+
+```bash
+# Copy the example configuration
+cp .env.example .env
+# Edit the .env file as needed
+```
+
 ### Set Up the Frontend
 
 1. Navigate to the frontend directory:
@@ -72,6 +80,14 @@ cd ../frontend
 
 ```bash
 npm install
+```
+
+3. Set up environment variables:
+
+```bash
+# Copy the example configuration
+cp .env.local.example .env.local
+# Edit the .env.local file as needed
 ```
 
 ## 🏃‍♀️ Running the Application
@@ -111,6 +127,39 @@ python main.py
 ```
 
 3. The application will be available at http://localhost:8000
+
+## 🌐 Deployment
+
+This project is configured for deployment on Vercel (frontend) and Render (backend).
+
+### Frontend Deployment (Vercel)
+
+1. Connect your GitHub repository (github.com/renbkna/renytdlp) to Vercel.
+2. Configure the project settings:
+   - **Framework Preset**: Vite
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+
+3. Add environment variables in the Vercel dashboard:
+   - Navigate to project settings > "Environment Variables"
+   - Add all variables from `.env.local.example` with production values
+   - Make sure `VITE_API_URL` points to your Render backend URL
+
+### Backend Deployment (Render)
+
+1. Create a new Web Service in your Render dashboard.
+2. Connect your GitHub repository (github.com/renbkna/renytdlp).
+3. Configure the service:
+   - **Runtime**: Python 3
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `python main.py`
+   
+4. Add environment variables in the Render dashboard:
+   - Go to service settings > "Environment" section
+   - Add all variables from `.env.example` with production values
+   - Make sure `ALLOWED_ORIGINS` includes your Vercel frontend URL
+
+For more detailed deployment instructions, see the README.md files in the frontend and server directories.
 
 ## 📝 Usage Guide
 
