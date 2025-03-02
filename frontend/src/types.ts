@@ -26,6 +26,10 @@ export interface VideoFormat {
   vcodec?: string
   acodec?: string
   format_note?: string
+  is_premium?: boolean
+  height?: number
+  width?: number
+  tbr?: number
 }
 
 export interface VideoInfo {
