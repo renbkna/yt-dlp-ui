@@ -158,15 +158,41 @@ def check_browser_available(browser: str = DEFAULT_BROWSER) -> bool:
             "--skip-download",
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
         ]
-        subprocess.run(
+        result = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5, check=False
         )
+
+        # Check if there was an error message about cookies database
+        if result.returncode != 0 or "could not find" in result.stderr.decode(
+            "utf-8", "ignore"
+        ):
+            logger.warning(
+                f"Browser {browser} cookies not accessible: {result.stderr.decode('utf-8', 'ignore')}"
+            )
+            return False
         return True
     except Exception as e:
         logger.warning(
             f"Browser {browser} not available for cookie extraction: {str(e)}"
         )
         return False
+
+
+def safely_use_browser_cookies(options: dict, use_browser_cookies: bool) -> dict:
+    """Safely add browser cookies to options if they're available."""
+    if not use_browser_cookies or not DEFAULT_BROWSER:
+        return options
+
+    # Check if browser cookies are available first
+    if check_browser_available(DEFAULT_BROWSER):
+        options["cookiesfrombrowser"] = (DEFAULT_BROWSER, None, None, None)
+        logger.info(f"Using cookies from browser: {DEFAULT_BROWSER}")
+    else:
+        logger.warning(
+            f"Browser cookies requested but {DEFAULT_BROWSER} is not available. Continuing without cookies."
+        )
+
+    return options
 
 
 def get_yt_dlp_base_args(use_browser_cookies: bool) -> List[str]:
@@ -232,9 +258,8 @@ def get_ytdlp_options(request: DownloadRequest, task_id: str) -> dict:
         "check_formats": False,  # Don't skip formats that might not be playable
     }
 
-    # Add browser cookies if requested
-    if request.use_browser_cookies and DEFAULT_BROWSER:
-        options["cookiesfrombrowser"] = (DEFAULT_BROWSER, None, None, None)
+    # Add browser cookies if requested (safely)
+    options = safely_use_browser_cookies(options, request.use_browser_cookies)
 
     # Extract audio if requested
     if request.extract_audio:
@@ -357,7 +382,7 @@ async def download_task(task_id: str, request: DownloadRequest):
 
         logger.info(f"Starting download task {task_id} for URL: {request.url}")
 
-        # Get options with browser cookies directly integrated
+        # Get options with browser cookies safely integrated
         options = get_ytdlp_options(request, task_id)
         logger.info(f"Using options with cookies: {request.use_browser_cookies}")
 
@@ -412,7 +437,7 @@ async def get_video_info(url: HttpUrl, is_playlist: bool = Query(False)):
         clean_url = sanitize_url(str(url), is_playlist)
         logger.info(f"Fetching video info for URL: {clean_url}")
 
-        # Basic yt-dlp options with browser cookies directly included
+        # Basic yt-dlp options
         options = {
             "noplaylist": not is_playlist,
             "extract_flat": "discard" if not is_playlist else None,
@@ -421,9 +446,8 @@ async def get_video_info(url: HttpUrl, is_playlist: bool = Query(False)):
             "download": False,
         }
 
-        # Add browser cookies directly to options
-        if DEFAULT_BROWSER:
-            options["cookiesfrombrowser"] = (DEFAULT_BROWSER, None, None, None)
+        # Add browser cookies safely
+        options = safely_use_browser_cookies(options, True)
 
         # Direct subprocess call with cookies-from-browser
         try:
@@ -432,9 +456,13 @@ async def get_video_info(url: HttpUrl, is_playlist: bool = Query(False)):
             if not is_playlist:
                 cmd.append("--no-playlist")
 
-            # Add browser cookies arguments
-            if DEFAULT_BROWSER:
+            # Add browser cookies arguments if available
+            if check_browser_available(DEFAULT_BROWSER):
                 cmd.extend(["--cookies-from-browser", DEFAULT_BROWSER])
+            else:
+                logger.info(
+                    "Skipping browser cookies for subprocess call as they're not available"
+                )
 
             cmd.append(clean_url)
 
@@ -559,7 +587,7 @@ async def get_formats(url: HttpUrl, is_playlist: bool = Query(False)):
         clean_url = sanitize_url(str(url), is_playlist)
         logger.info(f"Fetching formats for URL: {clean_url}")
 
-        # Basic yt-dlp options with browser cookies directly included
+        # Basic yt-dlp options
         options = {
             "noplaylist": not is_playlist,
             "extract_flat": "discard" if not is_playlist else None,
@@ -573,9 +601,8 @@ async def get_formats(url: HttpUrl, is_playlist: bool = Query(False)):
             },  # Get premium formats for YouTube
         }
 
-        # Add browser cookies directly to options
-        if DEFAULT_BROWSER:
-            options["cookiesfrombrowser"] = (DEFAULT_BROWSER, None, None, None)
+        # Add browser cookies safely
+        options = safely_use_browser_cookies(options, True)
 
         # Use direct subprocess call first for best compatibility
         try:
@@ -590,9 +617,13 @@ async def get_formats(url: HttpUrl, is_playlist: bool = Query(False)):
             if not is_playlist:
                 cmd.append("--no-playlist")
 
-            # Add browser cookies arguments
-            if DEFAULT_BROWSER:
+            # Add browser cookies arguments if available
+            if check_browser_available(DEFAULT_BROWSER):
                 cmd.extend(["--cookies-from-browser", DEFAULT_BROWSER])
+            else:
+                logger.info(
+                    "Skipping browser cookies for formats subprocess call as they're not available"
+                )
 
             cmd.append(clean_url)
 
@@ -717,13 +748,24 @@ async def cleanup_old_downloads(days: int = 7):
 @app.get("/")
 async def root():
     """API root endpoint."""
+    # Check browser availability once at startup for better error messages
+    browser_available = check_browser_available(DEFAULT_BROWSER)
+    browser_status_message = (
+        f"Browser {DEFAULT_BROWSER} is available for cookie extraction"
+        if browser_available
+        else f"Browser {DEFAULT_BROWSER} is not available for cookie extraction"
+    )
+
+    logger.info(browser_status_message)
+
     return {
         "message": "YT-DLP API is running",
         "version": "1.0.0",
         "documentation": "/docs",
         "browser_status": {
             "browser": DEFAULT_BROWSER,
-            "is_available": check_browser_available(DEFAULT_BROWSER),
+            "is_available": browser_available,
+            "message": browser_status_message,
         },
     }
 
