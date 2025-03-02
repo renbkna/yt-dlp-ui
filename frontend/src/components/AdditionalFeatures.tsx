@@ -7,7 +7,7 @@ import {
   Cookie, 
   FastForward, 
   Bookmark, 
-  Info
+  Info,
 } from "lucide-react"
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -83,14 +83,14 @@ export function AdditionalFeatures({ downloadOptions, updateDownloadOption }: Ad
                     <Cookie className="h-4 w-4 dark:text-amber-400 text-amber-500" />
                   </div>
                   <div>
-                    <Label htmlFor="cookies" className="cursor-pointer font-medium flex items-center">
+                    <Label htmlFor="browser-cookies" className="cursor-pointer font-medium flex items-center">
                       Use browser cookies
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Info className="h-3.5 w-3.5 dark:text-primary-foreground/40 text-secondary-foreground/40 ml-1.5 cursor-pointer" />
                         </TooltipTrigger>
                         <TooltipContent side="right" className="max-w-xs dark:bg-background bg-white dark:border-primary/30 border-secondary/30">
-                          <p>Use your browser cookies for age-restricted content or private videos.</p>
+                          <p>Extract cookies from browser installed on the server to authenticate with YouTube. Required for age-restricted content.</p>
                         </TooltipContent>
                       </Tooltip>
                     </Label>
@@ -100,9 +100,9 @@ export function AdditionalFeatures({ downloadOptions, updateDownloadOption }: Ad
                   </div>
                 </div>
                 <Switch
-                  id="cookies"
-                  checked={downloadOptions.cookies}
-                  onCheckedChange={(v) => updateDownloadOption("cookies", v)}
+                  id="browser-cookies"
+                  checked={downloadOptions.useBrowserCookies}
+                  onCheckedChange={(v) => updateDownloadOption("useBrowserCookies", v)}
                   className="data-[state=checked]:dark:bg-amber-500 data-[state=checked]:bg-amber-500"
                 />
               </div>

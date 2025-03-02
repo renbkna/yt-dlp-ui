@@ -9,7 +9,7 @@ export interface DownloadOptions {
   downloadSubtitles: boolean
   subtitleLanguages: string[]
   quality: string
-  cookies: boolean;
+  useBrowserCookies: boolean;
   writeDescription: boolean
   writeComments: boolean
   writeThumbnail: boolean

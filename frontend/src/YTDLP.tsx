@@ -17,6 +17,7 @@ import { AdditionalFeatures } from "@/components/AdditionalFeatures"
 import { SubtitleOptions } from "@/components/SubtitleOptions"
 import { ProgressTab } from "@/components/ProgressTab"
 import { ApiDebug } from "@/components/ApiDebug"
+import { YoutubeAuthError } from "@/components/YoutubeAuthError"
 import { API_BASE } from "@/types"
 
 const YTDLPPage = () => {
@@ -54,7 +55,7 @@ const YTDLPPage = () => {
     writeComments: false,
     writeThumbnail: false,
     writeInfoJson: false,
-    cookies: true,
+    useBrowserCookies: true,
     sponsorblock: false,
     chaptersFromComments: false,
   })
@@ -87,7 +88,20 @@ const YTDLPPage = () => {
         console.error(`Info response error: ${infoResponse.status} ${infoResponse.statusText}`);
         const infoText = await infoResponse.text();
         console.error(`Info response body: ${infoText}`);
-        throw new Error(`Failed to fetch video info: ${infoResponse.status} ${infoResponse.statusText}`);
+        
+        // Try to parse the error response as JSON if possible
+        let errorDetail = `Failed to fetch video info: ${infoResponse.status}`;
+        try {
+          const errorJson = JSON.parse(infoText);
+          if (errorJson.detail) {
+            errorDetail = errorJson.detail;
+          }
+        } catch (e) {
+          // If parsing fails, use the raw text
+          if (infoText) errorDetail = infoText;
+        }
+        
+        throw new Error(errorDetail);
       }
       
       if (!formatsResponse.ok) {
@@ -152,7 +166,7 @@ const YTDLPPage = () => {
         subtitle_languages: downloadOptions.subtitleLanguages,
         download_playlist: isPlaylist,
         sponsorblock: downloadOptions.sponsorblock,
-        cookies: downloadOptions.cookies,
+        use_browser_cookies: downloadOptions.useBrowserCookies,
         chapters_from_comments: downloadOptions.chaptersFromComments,
       });
       
@@ -171,7 +185,7 @@ const YTDLPPage = () => {
           subtitle_languages: downloadOptions.subtitleLanguages,
           download_playlist: isPlaylist,
           sponsorblock: downloadOptions.sponsorblock,
-          cookies: downloadOptions.cookies,
+          use_browser_cookies: downloadOptions.useBrowserCookies,
           chapters_from_comments: downloadOptions.chaptersFromComments,
         }),
       })
@@ -180,7 +194,20 @@ const YTDLPPage = () => {
         console.error(`Download response error: ${response.status} ${response.statusText}`);
         const responseText = await response.text();
         console.error(`Download response body: ${responseText}`);
-        throw new Error(`Failed to start download: ${response.status} ${response.statusText}`);
+        
+        // Try to parse the error response as JSON if possible
+        let errorDetail = `Failed to start download: ${response.status}`;
+        try {
+          const errorJson = JSON.parse(responseText);
+          if (errorJson.detail) {
+            errorDetail = errorJson.detail;
+          }
+        } catch (e) {
+          // If parsing fails, use the raw text
+          if (responseText) errorDetail = responseText;
+        }
+        
+        throw new Error(errorDetail);
       }
 
       const data = await response.json()
@@ -267,7 +294,7 @@ const YTDLPPage = () => {
       writeComments: false,
       writeThumbnail: false,
       writeInfoJson: false,
-      cookies: true,
+      useBrowserCookies: true,
       sponsorblock: false,
       chaptersFromComments: false,
     })
@@ -329,8 +356,11 @@ const YTDLPPage = () => {
         </CardHeader>
         
         <CardContent className="p-6 space-y-6">
+          {/* Show YouTube Auth Error component if error is related to authentication */}
+          {error && <YoutubeAuthError error={error} onRetry={fetchVideoInfo} />}
+          
           <AnimatePresence mode="wait">
-            {error && (
+            {error && !error.includes("Sign in to confirm you're not a bot") && (
               <motion.div 
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
