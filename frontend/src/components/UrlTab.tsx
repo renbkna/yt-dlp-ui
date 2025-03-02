@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Loader2, Download, List, Clipboard, X, Youtube, ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
+import type { ClientCookie } from '@/types'
 
 export interface UrlTabProps {
   url: string
@@ -13,6 +14,7 @@ export interface UrlTabProps {
   fetchVideoInfo: () => Promise<void>
   isPlaylist: boolean
   setIsPlaylist: (value: boolean) => void
+  extractCookies: () => Promise<ClientCookie[]>
 }
 
 export const UrlTab: React.FC<UrlTabProps> = React.memo(
