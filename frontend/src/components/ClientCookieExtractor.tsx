@@ -86,6 +86,13 @@ export function ClientCookieExtractor({ cookiesEnabled, onCookiesChange }: Clien
     
     checkCookieStatus();
   }, []);
+
+  // Extract cookies automatically on component mount
+  useEffect(() => {
+    if (cookiesEnabled && extractedCookies.length === 0 && !extracting) {
+      extractCookies();
+    }
+  }, [cookiesEnabled]);
   
   // Extract cookies from the user's browser
   const extractCookies = async () => {
@@ -291,7 +298,7 @@ export function ClientCookieExtractor({ cookiesEnabled, onCookiesChange }: Clien
             ) : (
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 dark:text-amber-400 text-amber-500 flex-shrink-0" />
-                <span>No cookies extracted yet. Click the button below to extract cookies.</span>
+                <span>Cookies are extracted automatically. Click refresh if needed.</span>
               </div>
             )}
             
@@ -302,7 +309,7 @@ export function ClientCookieExtractor({ cookiesEnabled, onCookiesChange }: Clien
               </div>
             )}
             
-            {cookiesEnabled && extractedCookies.length === 0 && !extracting && (
+            {cookiesEnabled && !extracting && (
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -311,8 +318,8 @@ export function ClientCookieExtractor({ cookiesEnabled, onCookiesChange }: Clien
                 onClick={extractCookies}
                 disabled={extracting}
               >
-                <Cookie className="h-4 w-4 mr-1.5" />
-                Extract Cookies
+                <RefreshCw className="h-4 w-4 mr-1.5" />
+                Refresh Cookies
               </Button>
             )}
           </div>
