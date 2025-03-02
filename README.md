@@ -9,6 +9,12 @@ A sleek web-based interface for downloading videos and audio from YouTube and ot
 - **Video & Playlist Support**  
   Download individual videos or entire playlists from YouTube and many other platforms
 
+- **Multi-Platform Support**  
+  Support for various video sources including YouTube, TikTok, Instagram, Twitter, and many more
+
+- **Premium Format Support**  
+  Access to premium quality options including 8K, HDR, and Dolby content (when available)
+
 - **Audio Extraction**  
   Extract audio in various formats (MP3, M4A, OPUS, FLAC, WAV, OGG) with customizable quality
 
@@ -24,8 +30,8 @@ A sleek web-based interface for downloading videos and audio from YouTube and ot
 - **SponsorBlock Integration**  
   Skip ads, intros, outros, and other segments automatically using SponsorBlock data
 
-- **Download Progress Tracking**  
-  Monitor the progress of downloads with real-time status updates and progress bars
+- **Accurate Download Progress Tracking**  
+  Monitor the progress of downloads with real-time status updates and precise progress indicators
 
 - **Beautiful Themes**  
   Switch between light theme and dark theme
@@ -164,20 +170,20 @@ For more detailed deployment instructions, see the README.md files in the fronte
 ## 📝 Usage Guide
 
 1. **Enter a URL**  
-   Enter a video or playlist URL from YouTube, TikTok, Twitter, or any other supported platform.
+   Enter a video or playlist URL from YouTube, TikTok, Instagram, Twitter, or any other supported platform.
 
 2. **Fetch Video Information**  
    Click "Get Video Information" to retrieve available formats and details.
 
 3. **Choose Download Options**  
    - **Extract Audio Only**: Toggle this to download only the audio track
-   - **Video Format**: Select your preferred resolution and format
+   - **Video Format**: Select your preferred resolution and format (including premium formats)
    - **Metadata Options**: Choose what metadata to embed or save
    - **Subtitle Options**: Select languages for subtitle download
    - **Additional Features**: Enable SponsorBlock, cookies, and other advanced features
 
 4. **Start Download**  
-   Click "Start Download" and monitor progress in real-time
+   Click "Start Download" and monitor progress in real-time with accurate percentage indicators
 
 5. **View Downloaded Files**  
    Once complete, access your files in the downloads folder

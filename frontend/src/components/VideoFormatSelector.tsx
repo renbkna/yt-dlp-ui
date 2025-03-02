@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
-import { Search, Film, Filter, X, Check, HelpCircle, Download, Music, PlayCircle, Video, Sparkles } from "lucide-react"
+import { Search, Film, Filter, X, Check, HelpCircle, Download, Music, PlayCircle, Video, Sparkles, Crown } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { 
   Tooltip,
@@ -64,6 +64,9 @@ export function VideoFormatSelector({
   
   // Function to extract resolution height
   const getResolutionHeight = (format: VideoFormat): number => {
+    // If height is directly provided, use it
+    if (format.height) return format.height;
+    
     // Try to extract from resolution string (e.g. "1280x720" -> 720)
     if (format.resolution) {
       const match = format.resolution.match(/\d+x(\d+)/);
@@ -91,6 +94,18 @@ export function VideoFormatSelector({
     return height;
   }
   
+  // Check if format is premium
+  const isPremiumFormat = (format: VideoFormat) => {
+    return format.is_premium || 
+      (format.format_note && (
+        format.format_note.toLowerCase().includes("premium") ||
+        format.format_note.toLowerCase().includes("hdr") ||
+        format.format_note.toLowerCase().includes("dolby") ||
+        format.format_note.toLowerCase().includes("8k") ||
+        format.format_note.toLowerCase().includes("4320p")
+      ));
+  }
+  
   // Filter and sort formats
   const filteredFormats = useMemo(() => {
     return formats
@@ -116,6 +131,14 @@ export function VideoFormatSelector({
         return true
       })
       .sort((a, b) => {
+        // Check for premium formats first
+        const aIsPremium = isPremiumFormat(a);
+        const bIsPremium = isPremiumFormat(b);
+        
+        // Sort premium formats first
+        if (aIsPremium && !bIsPremium) return -1;
+        if (!aIsPremium && bIsPremium) return 1;
+        
         // Sort by quality score (higher first)
         const qualityA = getQualityScore(a);
         const qualityB = getQualityScore(b);
@@ -138,179 +161,94 @@ export function VideoFormatSelector({
       })
   }, [formats, searchTerm, showAudioOnly, showVideoOnly])
 
-  // Improved best quality selection function with comprehensive format ID detection
+  // Completely rewritten best quality selection function that prioritizes resolution correctly
   const getBestQualityFormat = () => {
     if (!formats || formats.length === 0) return null;
     
     console.log("Finding best quality format from", formats.length, "formats");
     
-    // Define format ID priority lists by resolution and codec based on the provided list
+    // Create a utility function to log selection decisions
+    const logSelection = (formatId: string, reason: string) => {
+      console.log(`Selected format ${formatId}: ${reason}`);
+      return formats.find(f => f.format_id === formatId)!;
+    };
     
-    // 4K (2160p) formats
-    const fourKFormats = [
-      "625", // 3840x2160 Video: vp09 .mp4
-      "401", // 2160p Video: av01 .mp4
-      "313", // 2160p Video: vp9 .webm
-      "337", "315", "272", "701", "271", "699", "700",
-      "266", "334", "698", "697", "694", "696", "695"
-    ];
+    // First, get all video formats (exclude audio-only, storyboard, etc.)
+    const videoFormats = formats.filter(format => 
+      format.vcodec && 
+      format.vcodec !== 'none' && 
+      !format.format_id.startsWith('sb') &&
+      format.format_note !== 'storyboard'
+    );
     
-    // 1440p formats
-    const qhdFormats = [
-      "620", // 2560x1440 Video: vp09 .mp4
-      "271", // 1440p Video: vp9 .webm
-      "400", // 1440p Video: av01 .mp4
-      "308", "336", "335", "270", "330", "269",
-      "265", "333", "332", "331"
-    ];
-    
-    // 1080p formats
-    const fullHdFormats = [
-      "270", // 1920x1080 Video: avc1 .mp4
-      "248", // 1080p Video: vp9 .webm
-      "137", // 1080p Video: avc1 .mp4
-      "614", // 1920x1080 Video: vp09 .mp4
-      "399", // 1080p Video: av01 .mp4
-      "303", "299", "302", "298"
-    ];
-    
-    // 720p formats
-    const hdFormats = [
-      "232", // 1280x720 Video: avc1 .mp4
-      "247", // 720p Video: vp9 .webm
-      "136", // 720p Video: avc1 .mp4
-      "609", // 1280x720 Video: vp09 .mp4
-      "398", // 720p Video: av01 .mp4
-      "302", "298", "297", "22"
-    ];
-    
-    // 480p formats
-    const sdFormats = [
-      "231", // 854x480 Video: avc1 .mp4
-      "135", // 480p Video: avc1 .mp4
-      "606", // 854x480 Video: vp09 .mp4
-      "244", // 480p Video: vp9 .webm
-      "397" // 480p Video: av01 .mp4
-    ];
-    
-    // 360p formats
-    const lowFormats = [
-      "18", // 360p Video: avc1 Audio: mp4a .mp4 Video+Audio
-      "230", // 640x360 Video: avc1 .mp4
-      "134", // 360p Video: avc1 .mp4
-      "605", // 640x360 Video: vp09 .mp4
-      "243", // 360p Video: vp9 .webm
-      "396" // 360p Video: av01 .mp4
-    ];
-    
-    // Combined formats (with both audio and video)
-    const combinedFormats = [
-      "22", "18", "37", "38", "46", "82", "83", "84", "85", "100", "101", "102"
-    ];
-    
-    // Prioritize by resolution
-    const formatPriority = [
-      ...fourKFormats,
-      ...qhdFormats, 
-      ...fullHdFormats, 
-      ...hdFormats, 
-      ...sdFormats, 
-      ...combinedFormats, 
-      ...lowFormats
-    ];
-    
-    // Step 1: Look through our priority list first
-    for (const formatId of formatPriority) {
-      const format = formats.find(f => f.format_id === formatId);
-      if (format) {
-        console.log(`Selected format from priority list: ${formatId}`);
-        return format;
+    if (videoFormats.length === 0) {
+      // If no video formats, select best audio
+      const audioFormats = formats.filter(f => (!f.vcodec || f.vcodec === 'none'));
+      if (audioFormats.length > 0) {
+        const bestAudio = audioFormats.sort((a, b) => {
+          // Higher bitrate is better
+          const bitrateA = a.tbr || 0;
+          const bitrateB = b.tbr || 0;
+          return bitrateB - bitrateA;
+        })[0];
+        return logSelection(bestAudio.format_id, "Best audio (no video formats found)");
       }
+      // Fall back to first format if no video or audio formats
+      return formats[0];
     }
     
-    // Step 2: If none of our known format IDs match, select based on resolution
-    // Start with 4K
-    const has4k = formats.filter(f => 
-      f.vcodec && f.vcodec !== 'none' && 
-      getResolutionHeight(f) >= 2160 && 
-      !f.format_id.startsWith('sb')
-    );
-    
-    if (has4k.length > 0) {
-      const best4k = has4k.sort((a, b) => parseInt(b.format_id) - parseInt(a.format_id))[0];
-      console.log(`Selected 4K format: ${best4k.format_id}`);
-      return best4k;
+    // Check for premium formats first
+    const premiumFormats = videoFormats.filter(format => isPremiumFormat(format));
+    if (premiumFormats.length > 0) {
+      const bestPremium = premiumFormats.sort((a, b) => getQualityScore(b) - getQualityScore(a))[0];
+      return logSelection(bestPremium.format_id, "Premium format");
     }
     
-    // Try 1440p
-    const has1440p = formats.filter(f => 
-      f.vcodec && f.vcodec !== 'none' && 
-      getResolutionHeight(f) >= 1440 && 
-      getResolutionHeight(f) < 2160 &&
-      !f.format_id.startsWith('sb')
-    );
+    // Get the highest resolution available (based on height)
+    const sortedByHeight = [...videoFormats].sort((a, b) => {
+      const heightA = getResolutionHeight(a);
+      const heightB = getResolutionHeight(b);
+      return heightB - heightA;
+    });
     
-    if (has1440p.length > 0) {
-      const best1440p = has1440p.sort((a, b) => parseInt(b.format_id) - parseInt(a.format_id))[0];
-      console.log(`Selected 1440p format: ${best1440p.format_id}`);
-      return best1440p;
-    }
-    
-    // Try 1080p
-    const has1080p = formats.filter(f => 
-      f.vcodec && f.vcodec !== 'none' && 
-      getResolutionHeight(f) >= 1080 && 
-      getResolutionHeight(f) < 1440 &&
-      !f.format_id.startsWith('sb')
-    );
-    
-    if (has1080p.length > 0) {
-      const best1080p = has1080p.sort((a, b) => parseInt(b.format_id) - parseInt(a.format_id))[0];
-      console.log(`Selected 1080p format: ${best1080p.format_id}`);
-      return best1080p;
-    }
-    
-    // Try 720p
-    const has720p = formats.filter(f => 
-      f.vcodec && f.vcodec !== 'none' && 
-      getResolutionHeight(f) >= 720 && 
-      getResolutionHeight(f) < 1080 &&
-      !f.format_id.startsWith('sb')
-    );
-    
-    if (has720p.length > 0) {
-      const best720p = has720p.sort((a, b) => parseInt(b.format_id) - parseInt(a.format_id))[0];
-      console.log(`Selected 720p format: ${best720p.format_id}`);
-      return best720p;
-    }
-    
-    // Step 3: Fall back to any video format, preferring higher resolution
-    const anyVideo = formats.filter(f => 
-      f.vcodec && f.vcodec !== 'none' && 
-      !f.format_id.startsWith('sb')
-    );
-    
-    if (anyVideo.length > 0) {
-      // Sort by resolution height
-      const bestVideo = anyVideo.sort((a, b) => {
-        const heightA = getResolutionHeight(a);
-        const heightB = getResolutionHeight(b);
-        
-        if (heightA !== heightB) {
-          return heightB - heightA;
-        }
-        
-        // If heights are the same, prefer by format ID
-        return parseInt(b.format_id) - parseInt(a.format_id);
-      })[0];
+    // If we have anything 720p or higher, prioritize it
+    if (sortedByHeight.length > 0 && getResolutionHeight(sortedByHeight[0]) >= 720) {
+      const bestFormat = sortedByHeight[0];
+      const height = getResolutionHeight(bestFormat);
       
-      console.log(`Selected fallback video format: ${bestVideo.format_id}`);
-      return bestVideo;
+      // Check if it has audio
+      const hasAudio = bestFormat.acodec && bestFormat.acodec !== 'none';
+      
+      // If it has both audio and video, this is optimal
+      if (hasAudio) {
+        return logSelection(bestFormat.format_id, `${height}p format with audio`);
+      }
+      
+      // Look for a format with the same resolution that has audio
+      const sameResWithAudio = videoFormats.filter(f => 
+        getResolutionHeight(f) === height && 
+        f.acodec && 
+        f.acodec !== 'none'
+      );
+      
+      if (sameResWithAudio.length > 0) {
+        return logSelection(sameResWithAudio[0].format_id, `${height}p format with audio (same resolution)`);
+      }
+      
+      // Otherwise, use the highest resolution even without audio
+      return logSelection(bestFormat.format_id, `Highest resolution (${height}p)`);
     }
     
-    // Last resort - return the first format
-    console.log(`Last resort - using first format: ${formats[0].format_id}`);
-    return formats[0];
+    // Fall back to any format with both video and audio (like "18" which is common)
+    const formatsWithBoth = videoFormats.filter(f => f.acodec && f.acodec !== 'none');
+    if (formatsWithBoth.length > 0) {
+      // Sort by resolution
+      const bestWithBoth = formatsWithBoth.sort((a, b) => getQualityScore(b) - getQualityScore(a))[0];
+      return logSelection(bestWithBoth.format_id, "Best format with both audio and video");
+    }
+    
+    // If we reach here, just return the highest resolution video format
+    return logSelection(sortedByHeight[0].format_id, "Highest resolution (fallback)");
   };
   
   const handleBestQualitySelect = () => {
@@ -438,6 +376,7 @@ export function VideoFormatSelector({
                     const isSelected = downloadOptions.format === format.format_id
                     const resHeight = getResolutionHeight(format);
                     const isHighRes = resHeight >= 720;
+                    const isPremium = isPremiumFormat(format);
                     
                     return (
                       <TableRow 
@@ -446,6 +385,7 @@ export function VideoFormatSelector({
                         className={`
                           cursor-pointer transition-all dark:hover:bg-primary/5 hover:bg-secondary/5
                           ${isSelected ? 'dark:bg-primary/10 bg-secondary/10 dark:hover:bg-primary/20 hover:bg-secondary/20 dark:border-l-2 border-l-2 dark:border-l-primary border-l-secondary' : ''}
+                          ${isPremium ? 'dark:bg-amber-950/20 bg-amber-100/50' : ''}
                         `}
                         onClick={() => updateDownloadOption("format", format.format_id)}
                       >
@@ -475,13 +415,17 @@ export function VideoFormatSelector({
                                 <PlayCircle className="h-4 w-4 dark:text-primary text-secondary" />
                               )}
                               
-                              <span className={isHighRes ? "dark:text-white text-foreground" : ""}>
+                              <span className={isPremium ? "dark:text-amber-300 text-amber-600" : (isHighRes ? "dark:text-white text-foreground" : "")}>
                                 {getResolutionLabel(format)}
                                 {format.format_note && format.format_note !== getResolutionLabel(format) && 
                                   ` • ${format.format_note}`}
                               </span>
                               
-                              {isHighRes && hasVideo && hasAudio && (
+                              {isPremium && (
+                                <Crown className="h-3.5 w-3.5 dark:text-amber-300 text-amber-500" />
+                              )}
+                              
+                              {isHighRes && hasVideo && hasAudio && !isPremium && (
                                 <Sparkles className="h-3.5 w-3.5 dark:text-green-400 text-green-500" />
                               )}
                             </div>
@@ -504,7 +448,14 @@ export function VideoFormatSelector({
                                 .{format.ext}
                               </Badge>
                               
-                              {hasVideo && hasAudio && (
+                              {isPremium && (
+                                <Badge className="text-xs py-0 h-5 dark:bg-amber-500/20 bg-amber-500/20
+                                  dark:text-amber-300 text-amber-600 dark:border-amber-500/30 border-amber-500/30">
+                                  Premium
+                                </Badge>
+                              )}
+                              
+                              {hasVideo && hasAudio && !isPremium && (
                                 <Badge className="text-xs py-0 h-5 dark:bg-primary/20 bg-secondary/20 
                                   dark:text-primary-foreground text-secondary-foreground dark:border-primary/30 border-secondary/30">
                                   Video+Audio
@@ -560,6 +511,7 @@ export function VideoFormatSelector({
               </div>
             </TooltipTrigger>
             <TooltipContent className="max-w-xs dark:bg-background bg-white dark:border-primary/30 border-secondary/30">
+              <p>• <span className="font-bold">Premium formats</span> are highlighted in amber</p>
               <p>• <span className="font-bold">High resolution formats</span> are highlighted</p>
               <p>• <span className="font-bold">Video+Audio</span> formats require no additional processing</p>
               <p>• File size is estimated and may vary</p>
