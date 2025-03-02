@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Loader2, Settings, Download, AlertCircle, Youtube, List, Share2, Music, Film, Sparkles } from "lucide-react"
-import type { DownloadOptions, VideoInfo, VideoFormat, DownloadStatus } from "@/types"
+import type { DownloadOptions, VideoInfo, VideoFormat, DownloadStatus, ClientCookie } from "@/types"
 import { useToast } from "@/components/ui/use-toast"
 import { AnimatePresence, motion } from "framer-motion"
 import { UrlTab } from "@/components/UrlTab"
@@ -40,6 +40,7 @@ const YTDLPPage = () => {
     }
   }, []);
 
+  // Updated DownloadOptions to include clientCookies
   const [downloadOptions, setDownloadOptions] = useState<DownloadOptions>({
     format: "",
     extractAudio: false,
@@ -56,6 +57,7 @@ const YTDLPPage = () => {
     writeThumbnail: false,
     writeInfoJson: false,
     useBrowserCookies: true,
+    clientCookies: undefined,
     sponsorblock: false,
     chaptersFromComments: false,
   })
@@ -79,9 +81,26 @@ const YTDLPPage = () => {
     try {
       console.log(`Fetching video info from: ${API_BASE}/info?url=${encodeURIComponent(url)}`);
       
+      // Add client cookies to the request if available
+      let infoUrl = `${API_BASE}/info?url=${encodeURIComponent(url)}&is_playlist=${isPlaylist}`;
+      let formatsUrl = `${API_BASE}/formats?url=${encodeURIComponent(url)}&is_playlist=${isPlaylist}`;
+      
+      // If we have client cookies, add them to the request body
+      const fetchOptions: RequestInit = {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      };
+
+      // If client cookies are available, send them in the request
+      if (downloadOptions.useBrowserCookies && downloadOptions.clientCookies && downloadOptions.clientCookies.length > 0) {
+        console.log(`Using ${downloadOptions.clientCookies.length} client cookies for authentication`);
+      }
+      
       const [infoResponse, formatsResponse] = await Promise.all([
-        fetch(`${API_BASE}/info?url=${encodeURIComponent(url)}&is_playlist=${isPlaylist}`),
-        fetch(`${API_BASE}/formats?url=${encodeURIComponent(url)}&is_playlist=${isPlaylist}`),
+        fetch(infoUrl, fetchOptions),
+        fetch(formatsUrl, fetchOptions),
       ])
       
       if (!infoResponse.ok) {
@@ -154,7 +173,9 @@ const YTDLPPage = () => {
     try {
       setError(null)
       console.log(`Starting download to: ${API_BASE}/download`);
-      console.log("Download request body:", {
+      
+      // Add downloaded cookies to the request
+      const requestBody = {
         url,
         format: downloadOptions.format,
         extract_audio: downloadOptions.extractAudio,
@@ -167,27 +188,16 @@ const YTDLPPage = () => {
         download_playlist: isPlaylist,
         sponsorblock: downloadOptions.sponsorblock,
         use_browser_cookies: downloadOptions.useBrowserCookies,
+        client_cookies: downloadOptions.clientCookies,
         chapters_from_comments: downloadOptions.chaptersFromComments,
-      });
+      };
+      
+      console.log("Download request body:", {...requestBody, client_cookies: `[${downloadOptions.clientCookies?.length || 0} cookies]`});
       
       const response = await fetch(`${API_BASE}/download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url,
-          format: downloadOptions.format,
-          extract_audio: downloadOptions.extractAudio,
-          audio_format: downloadOptions.audioFormat,
-          quality: downloadOptions.audioQuality,
-          embed_metadata: downloadOptions.embedMetadata,
-          embed_thumbnail: downloadOptions.embedThumbnail,
-          download_subtitles: downloadOptions.downloadSubtitles,
-          subtitle_languages: downloadOptions.subtitleLanguages,
-          download_playlist: isPlaylist,
-          sponsorblock: downloadOptions.sponsorblock,
-          use_browser_cookies: downloadOptions.useBrowserCookies,
-          chapters_from_comments: downloadOptions.chaptersFromComments,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (!response.ok) {
@@ -295,6 +305,7 @@ const YTDLPPage = () => {
       writeThumbnail: false,
       writeInfoJson: false,
       useBrowserCookies: true,
+      clientCookies: undefined,
       sponsorblock: false,
       chaptersFromComments: false,
     })

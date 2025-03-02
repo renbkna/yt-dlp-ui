@@ -33,6 +33,9 @@ A sleek web-based interface for downloading videos and audio from YouTube and ot
 - **Accurate Download Progress Tracking**  
   Monitor the progress of downloads with real-time status updates and precise progress indicators
 
+- **Client-Side Cookie Extraction**  
+  Extract YouTube authentication cookies directly from your browser for age-restricted content
+
 - **Beautiful Themes**  
   Switch between light theme and dark theme
 
@@ -46,7 +49,7 @@ A sleek web-based interface for downloading videos and audio from YouTube and ot
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/renbkna/renytdlp
+git clone https://github.com/renbkna/yt-dlp-ui
 cd renytdlp
 ```
 
@@ -159,7 +162,7 @@ This project is configured for deployment on Vercel (frontend) and Render (backe
    - **Runtime**: Python 3
    - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `python main.py`
-   
+
 4. Add environment variables in the Render dashboard:
    - Go to service settings > "Environment" section
    - Add all variables from `.env.example` with production values
@@ -182,10 +185,15 @@ For more detailed deployment instructions, see the README.md files in the fronte
    - **Subtitle Options**: Select languages for subtitle download
    - **Additional Features**: Enable SponsorBlock, cookies, and other advanced features
 
-4. **Start Download**  
+4. **Authentication for Age-Restricted Content**  
+   - Enable "Use browser cookies" in the Additional Features section
+   - The application will extract cookies from your browser for authentication
+   - This allows downloading age-restricted content without server-side browser configuration
+
+5. **Start Download**  
    Click "Start Download" and monitor progress in real-time with accurate percentage indicators
 
-5. **View Downloaded Files**  
+6. **View Downloaded Files**  
    Once complete, access your files in the downloads folder
 
 ## 🎨 Themes
@@ -207,5 +215,5 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## 🙏 Credits
 
-- **Project Built by**: [renbkna](https://github.com/renbkna/renytdlp)
+- **Project Built by**: [renbkna](https://github.com/renbkna/yt-dlp-ui)
 - **Powered by**: [yt-dlp](https://github.com/yt-dlp/yt-dlp-ui)

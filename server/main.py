@@ -1,7 +1,7 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Query, Request, Depends
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Query, Request, Depends, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, HttpUrl, Field
+from pydantic import BaseModel, HttpUrl, Field, validator
 from typing import Optional, List, Dict, Union, Any
 import yt_dlp
 import asyncio
@@ -10,8 +10,11 @@ import os
 import logging
 import time
 import re
+import json
+import tempfile
 import subprocess
-from datetime import datetime
+import shutil
+from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 
@@ -26,6 +29,10 @@ logger = logging.getLogger("yt-dlp-api")
 # Browser to use for cookie extraction - can be set via environment variable
 # Options: chrome, chromium, firefox, opera, edge, safari, brave, vivaldi
 DEFAULT_BROWSER = os.getenv("YT_DLP_BROWSER", "chrome")
+
+# Cookie file configuration
+COOKIE_DIR = os.getenv("COOKIE_DIR", tempfile.gettempdir())
+COOKIE_EXPIRY_HOURS = int(os.getenv("COOKIE_EXPIRY_HOURS", "1"))
 
 app = FastAPI(
     title="YT-DLP API",
@@ -44,7 +51,38 @@ app.add_middleware(
     allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=True,  # Allow credentials for cookie passing
 )
+
+
+class Cookie(BaseModel):
+    """Model for a browser cookie."""
+    domain: str
+    name: str
+    value: str
+    path: str = "/"
+    secure: bool = True
+    httpOnly: bool = False
+    expirationDate: Optional[float] = None
+
+    @validator('domain')
+    def validate_domain(cls, v):
+        # Basic domain validation - this could be enhanced
+        if not re.match(r'^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', v):
+            raise ValueError('Invalid domain format')
+        return v
+
+    @validator('name', 'value')
+    def no_semicolons(cls, v):
+        if ';' in v:
+            raise ValueError('Semicolons not allowed in cookie name/value')
+        return v
+
+
+class CookieUpload(BaseModel):
+    """Model for uploading cookies from client."""
+    cookies: List[Cookie]
+    source: str = "client"  # Indicates the source of cookies (client, extension, etc.)
 
 
 class DownloadRequest(BaseModel):
@@ -66,9 +104,32 @@ class DownloadRequest(BaseModel):
     )
     sponsorblock: bool = Field(default=False, description="Skip sponsored segments")
     use_browser_cookies: bool = Field(default=True, description="Use browser cookies")
+    client_cookies: Optional[List[Cookie]] = Field(
+        default=None, description="Cookies provided by the client"
+    )
     chapters_from_comments: bool = Field(
         default=False, description="Create chapters from comments"
     )
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                "format": "22",
+                "extract_audio": False,
+                "use_browser_cookies": True,
+                "client_cookies": [
+                    {
+                        "domain": "youtube.com",
+                        "name": "LOGIN_INFO",
+                        "value": "AFmmF2swRQIhA...",
+                        "path": "/",
+                        "secure": True,
+                        "httpOnly": True,
+                    }
+                ],
+            }
+        }
 
 
 class DownloadResponse(BaseModel):
@@ -110,9 +171,103 @@ class BrowserStatusResponse(BaseModel):
     message: str
 
 
+class CookieStatusResponse(BaseModel):
+    browser_cookies_available: bool
+    client_cookies_supported: bool
+    cookie_file_path: Optional[str] = None
+    message: str
+
+
 download_tasks: Dict[str, DownloadStatus] = {}
 DOWNLOAD_DIR = Path(os.getenv("DOWNLOAD_DIR", "downloads"))
 DOWNLOAD_DIR.mkdir(exist_ok=True)
+
+
+class CookieManager:
+    """Manages cookie operations including storage and retrieval."""
+
+    def __init__(self):
+        self.cookie_dir = Path(COOKIE_DIR)
+        self.cookie_dir.mkdir(exist_ok=True)
+        self.cookie_expiry = timedelta(hours=COOKIE_EXPIRY_HOURS)
+        
+        # Clean up old cookie files on startup
+        self._cleanup_old_cookie_files()
+
+    def _cleanup_old_cookie_files(self):
+        """Remove old cookie files."""
+        try:
+            expiry_time = datetime.now() - self.cookie_expiry
+            count = 0
+            for file in self.cookie_dir.glob("yt_dlp_cookies_*.txt"):
+                if file.stat().st_mtime < expiry_time.timestamp():
+                    file.unlink()
+                    count += 1
+            if count > 0:
+                logger.info(f"Cleaned up {count} expired cookie files")
+        except Exception as e:
+            logger.warning(f"Error cleaning up cookie files: {e}")
+
+    def create_cookie_file(self, cookies: List[Cookie], task_id: str = None) -> Path:
+        """
+        Create a Netscape format cookie file from a list of cookies.
+        
+        Args:
+            cookies: List of Cookie objects
+            task_id: Optional task ID to associate with the cookie file
+            
+        Returns:
+            Path to the created cookie file
+        """
+        if not cookies:
+            raise ValueError("No cookies provided")
+            
+        file_id = task_id or str(uuid.uuid4())
+        cookie_file = self.cookie_dir / f"yt_dlp_cookies_{file_id}.txt"
+        
+        try:
+            with open(cookie_file, "w") as f:
+                f.write("# Netscape HTTP Cookie File\n")
+                f.write("# This file was generated by renytdlp\n")
+                f.write("# https://github.com/renbkna/renytdlp\n\n")
+                
+                for cookie in cookies:
+                    # Format: domain, subdomain flag, path, secure flag, expiration, name, value
+                    domain = cookie.domain
+                    if not domain.startswith(".") and not domain.startswith("www."):
+                        domain = "." + domain
+                        
+                    # Default expiration to 1 year if not provided
+                    expiration = int(cookie.expirationDate or (time.time() + 31536000))
+                    
+                    # TRUE/FALSE for flags
+                    http_only = "TRUE" if cookie.httpOnly else "FALSE"
+                    secure = "TRUE" if cookie.secure else "FALSE"
+                    
+                    # Write the cookie line
+                    # domain, include subdomains, path, secure, expiry, name, value
+                    f.write(f"{domain}\tTRUE\t{cookie.path}\t{secure}\t{expiration}\t{cookie.name}\t{cookie.value}\n")
+            
+            logger.info(f"Created cookie file: {cookie_file}")
+            return cookie_file
+        except Exception as e:
+            logger.error(f"Error creating cookie file: {e}")
+            if cookie_file.exists():
+                cookie_file.unlink()
+            raise
+
+    def delete_cookie_file(self, cookie_file: Path):
+        """Delete a cookie file."""
+        try:
+            if cookie_file and cookie_file.exists():
+                cookie_file.unlink()
+                logger.info(f"Deleted cookie file: {cookie_file}")
+        except Exception as e:
+            logger.warning(f"Error deleting cookie file {cookie_file}: {e}")
+
+
+# Initialize cookie manager
+cookie_manager = CookieManager()
 
 
 # Custom exception handlers
@@ -178,30 +333,40 @@ def check_browser_available(browser: str = DEFAULT_BROWSER) -> bool:
         return False
 
 
-def safely_use_browser_cookies(options: dict, use_browser_cookies: bool) -> dict:
-    """Safely add browser cookies to options if they're available."""
-    if not use_browser_cookies or not DEFAULT_BROWSER:
-        return options
-
-    # Check if browser cookies are available first
-    if check_browser_available(DEFAULT_BROWSER):
-        options["cookiesfrombrowser"] = (DEFAULT_BROWSER, None, None, None)
-        logger.info(f"Using cookies from browser: {DEFAULT_BROWSER}")
-    else:
-        logger.warning(
-            f"Browser cookies requested but {DEFAULT_BROWSER} is not available. Continuing without cookies."
-        )
-
-    return options
-
-
-def get_yt_dlp_base_args(use_browser_cookies: bool) -> List[str]:
-    """Get base yt-dlp command-line arguments including browser cookies if requested."""
+def get_yt_dlp_base_args(use_browser_cookies: bool, client_cookies: List[Cookie] = None, task_id: str = None) -> List[str]:
+    """
+    Get base yt-dlp command-line arguments for cookies.
+    
+    Args:
+        use_browser_cookies: Whether to use browser cookies
+        client_cookies: Optional client-provided cookies
+        task_id: Task ID for cookie file management
+        
+    Returns:
+        List of command-line arguments for yt-dlp
+    """
     args = []
+    cookie_file = None
+    
+    # Try client cookies first if provided
+    if client_cookies:
+        try:
+            cookie_file = cookie_manager.create_cookie_file(client_cookies, task_id)
+            logger.info(f"Using client-provided cookies from file: {cookie_file}")
+            args.extend(["--cookies", str(cookie_file)])
+            return args, cookie_file
+        except Exception as e:
+            logger.warning(f"Failed to create cookie file from client cookies: {e}")
+    
+    # Fall back to browser cookies if requested and no client cookies were used
     if use_browser_cookies and DEFAULT_BROWSER:
-        logger.info(f"Adding cookies-from-browser: {DEFAULT_BROWSER}")
-        args.extend(["--cookies-from-browser", DEFAULT_BROWSER])
-    return args
+        if check_browser_available(DEFAULT_BROWSER):
+            logger.info(f"Using cookies from browser: {DEFAULT_BROWSER}")
+            args.extend(["--cookies-from-browser", DEFAULT_BROWSER])
+        else:
+            logger.warning(f"Browser cookies requested but {DEFAULT_BROWSER} is not available")
+    
+    return args, cookie_file
 
 
 def get_ytdlp_options(request: DownloadRequest, task_id: str) -> dict:
@@ -258,8 +423,22 @@ def get_ytdlp_options(request: DownloadRequest, task_id: str) -> dict:
         "check_formats": False,  # Don't skip formats that might not be playable
     }
 
-    # Add browser cookies if requested (safely)
-    options = safely_use_browser_cookies(options, request.use_browser_cookies)
+    # Get cookie arguments - handle both client and browser cookies
+    cookie_args, cookie_file = get_yt_dlp_base_args(
+        request.use_browser_cookies, 
+        request.client_cookies,
+        task_id
+    )
+    
+    # Store cookie file path in options for cleanup
+    if cookie_file:
+        options["cookie_file"] = str(cookie_file)
+    
+    # Add cookie arguments to yt-dlp options
+    if "--cookies" in cookie_args:
+        options["cookies"] = cookie_args[cookie_args.index("--cookies") + 1]
+    elif "--cookies-from-browser" in cookie_args:
+        options["cookiesfrombrowser"] = (cookie_args[cookie_args.index("--cookies-from-browser") + 1], None, None, None)
 
     # Extract audio if requested
     if request.extract_audio:
@@ -295,6 +474,18 @@ def format_speed(speed_bytes: float) -> str:
         return f"{speed_bytes / (1024 * 1024):.2f}MB/s"
     else:
         return f"{speed_bytes / (1024 * 1024 * 1024):.2f}GB/s"
+
+
+def cleanup_cookie_file(options: dict):
+    """Clean up any cookie file created for the download."""
+    if "cookie_file" in options and options["cookie_file"]:
+        try:
+            cookie_file = Path(options["cookie_file"])
+            if cookie_file.exists():
+                cookie_file.unlink()
+                logger.info(f"Cleaned up cookie file: {cookie_file}")
+        except Exception as e:
+            logger.warning(f"Error cleaning up cookie file: {e}")
 
 
 def update_progress(task_id: str, d: dict):
@@ -376,15 +567,19 @@ def update_progress(task_id: str, d: dict):
 async def download_task(task_id: str, request: DownloadRequest):
     """Background task for video download."""
     start_time = time.time()
+    options = None
     try:
         task_dir = DOWNLOAD_DIR / task_id
         task_dir.mkdir(exist_ok=True)
 
         logger.info(f"Starting download task {task_id} for URL: {request.url}")
 
-        # Get options with browser cookies safely integrated
+        # Get options with cookie integration
         options = get_ytdlp_options(request, task_id)
-        logger.info(f"Using options with cookies: {request.use_browser_cookies}")
+        
+        # Log cookie usage but protect sensitive info
+        cookie_type = "client" if request.client_cookies else ("browser" if request.use_browser_cookies else "none")
+        logger.info(f"Using cookies ({cookie_type}) for task {task_id}")
 
         with yt_dlp.YoutubeDL(options) as ydl:
             download_tasks[task_id] = DownloadStatus(
@@ -408,6 +603,46 @@ async def download_task(task_id: str, request: DownloadRequest):
         download_tasks[task_id] = DownloadStatus(
             status="error", progress=0.0, error=str(e), eta=None, speed=None
         )
+    finally:
+        # Clean up any cookie files
+        if options:
+            cleanup_cookie_file(options)
+
+
+@app.post("/api/cookies", response_model=CookieStatusResponse)
+async def upload_cookies(cookies: CookieUpload):
+    """
+    Upload cookies from the client browser to be used for video downloads.
+    This is particularly useful for age-restricted videos on YouTube.
+    """
+    try:
+        # Validate cookies
+        if not cookies.cookies or len(cookies.cookies) == 0:
+            return CookieStatusResponse(
+                browser_cookies_available=check_browser_available(DEFAULT_BROWSER),
+                client_cookies_supported=True,
+                message="No cookies provided"
+            )
+        
+        # Create a test cookie file to verify
+        test_id = f"test_{uuid.uuid4()}"
+        cookie_file = cookie_manager.create_cookie_file(cookies.cookies, test_id)
+        
+        # Clean up test file
+        cookie_manager.delete_cookie_file(cookie_file)
+        
+        return CookieStatusResponse(
+            browser_cookies_available=check_browser_available(DEFAULT_BROWSER),
+            client_cookies_supported=True,
+            message=f"Successfully processed {len(cookies.cookies)} cookies"
+        )
+    except Exception as e:
+        logger.error(f"Error processing uploaded cookies: {e}")
+        return CookieStatusResponse(
+            browser_cookies_available=check_browser_available(DEFAULT_BROWSER),
+            client_cookies_supported=True,
+            message=f"Error processing cookies: {str(e)}"
+        )
 
 
 @app.post("/api/download", response_model=DownloadResponse)
@@ -430,12 +665,27 @@ async def get_status(task_id: str):
 
 
 @app.get("/api/info", response_model=VideoInfoResponse)
-async def get_video_info(url: HttpUrl, is_playlist: bool = Query(False)):
+async def get_video_info(
+    url: HttpUrl,
+    is_playlist: bool = Query(False),
+    client_cookies: Optional[List[Dict]] = None
+):
     """Get information about a video or playlist."""
     start_time = time.time()
+    cookie_file = None
+    
     try:
         clean_url = sanitize_url(str(url), is_playlist)
         logger.info(f"Fetching video info for URL: {clean_url}")
+
+        # Convert client cookies if provided in query
+        cookies_list = None
+        if client_cookies:
+            try:
+                cookies_list = [Cookie(**cookie) for cookie in client_cookies]
+                logger.info(f"Using {len(cookies_list)} client-provided cookies for video info")
+            except Exception as e:
+                logger.warning(f"Failed to parse client cookies: {e}")
 
         # Basic yt-dlp options
         options = {
@@ -446,24 +696,24 @@ async def get_video_info(url: HttpUrl, is_playlist: bool = Query(False)):
             "download": False,
         }
 
-        # Add browser cookies safely
-        options = safely_use_browser_cookies(options, True)
+        # Get cookie arguments - handle both client and browser cookies
+        cookie_args, cookie_file = get_yt_dlp_base_args(True, cookies_list)
+        
+        # Add cookie arguments to yt-dlp options
+        if "--cookies" in cookie_args:
+            options["cookies"] = cookie_args[cookie_args.index("--cookies") + 1]
+        elif "--cookies-from-browser" in cookie_args:
+            options["cookiesfrombrowser"] = (cookie_args[cookie_args.index("--cookies-from-browser") + 1], None, None, None)
 
-        # Direct subprocess call with cookies-from-browser
+        # Direct subprocess call with cookies for maximum compatibility
         try:
-            # First try direct subprocess call with cookies-from-browser for maximum compatibility
+            # First try direct subprocess call with cookies for maximum compatibility
             cmd = ["yt-dlp", "--dump-json", "--no-warnings", "--quiet"]
             if not is_playlist:
                 cmd.append("--no-playlist")
 
-            # Add browser cookies arguments if available
-            if check_browser_available(DEFAULT_BROWSER):
-                cmd.extend(["--cookies-from-browser", DEFAULT_BROWSER])
-            else:
-                logger.info(
-                    "Skipping browser cookies for subprocess call as they're not available"
-                )
-
+            # Add cookie arguments
+            cmd.extend(cookie_args)
             cmd.append(clean_url)
 
             logger.info(f"Running command: {' '.join(cmd)}")
@@ -471,7 +721,6 @@ async def get_video_info(url: HttpUrl, is_playlist: bool = Query(False)):
 
             # Parse the JSON output
             import json
-
             info = json.loads(result.stdout)
 
             duration = time.time() - start_time
@@ -529,6 +778,7 @@ async def get_video_info(url: HttpUrl, is_playlist: bool = Query(False)):
         if "Sign in to confirm you're not a bot" in error_message:
             browser_status = check_browser_available(DEFAULT_BROWSER)
             additional_info = f"\nBrowser {DEFAULT_BROWSER} {'is' if browser_status else 'is not'} available for cookies."
+            additional_info += "\nConsider providing client-side cookies for authentication."
             raise HTTPException(status_code=400, detail=error_message + additional_info)
 
         # For TikTok/Instagram videos, try to extract minimal info
@@ -577,15 +827,37 @@ async def get_video_info(url: HttpUrl, is_playlist: bool = Query(False)):
 
         # For other platforms, just propagate the error
         raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        # Clean up any cookie files
+        if cookie_file:
+            try:
+                cookie_manager.delete_cookie_file(Path(cookie_file))
+            except Exception as e:
+                logger.warning(f"Error cleaning up cookie file: {e}")
 
 
 @app.get("/api/formats", response_model=FormatsResponse)
-async def get_formats(url: HttpUrl, is_playlist: bool = Query(False)):
+async def get_formats(
+    url: HttpUrl,
+    is_playlist: bool = Query(False),
+    client_cookies: Optional[List[Dict]] = None
+):
     """Get available formats for a video or playlist with premium quality options."""
     start_time = time.time()
+    cookie_file = None
+    
     try:
         clean_url = sanitize_url(str(url), is_playlist)
         logger.info(f"Fetching formats for URL: {clean_url}")
+
+        # Convert client cookies if provided in query
+        cookies_list = None
+        if client_cookies:
+            try:
+                cookies_list = [Cookie(**cookie) for cookie in client_cookies]
+                logger.info(f"Using {len(cookies_list)} client-provided cookies for formats")
+            except Exception as e:
+                logger.warning(f"Failed to parse client cookies: {e}")
 
         # Basic yt-dlp options
         options = {
@@ -601,12 +873,18 @@ async def get_formats(url: HttpUrl, is_playlist: bool = Query(False)):
             },  # Get premium formats for YouTube
         }
 
-        # Add browser cookies safely
-        options = safely_use_browser_cookies(options, True)
+        # Get cookie arguments - handle both client and browser cookies
+        cookie_args, cookie_file = get_yt_dlp_base_args(True, cookies_list)
+        
+        # Add cookie arguments to yt-dlp options
+        if "--cookies" in cookie_args:
+            options["cookies"] = cookie_args[cookie_args.index("--cookies") + 1]
+        elif "--cookies-from-browser" in cookie_args:
+            options["cookiesfrombrowser"] = (cookie_args[cookie_args.index("--cookies-from-browser") + 1], None, None, None)
 
         # Use direct subprocess call first for best compatibility
         try:
-            # First try direct subprocess call with cookies-from-browser for maximum compatibility
+            # First try direct subprocess call with cookies for maximum compatibility
             cmd = [
                 "yt-dlp",
                 "--dump-json",
@@ -617,14 +895,8 @@ async def get_formats(url: HttpUrl, is_playlist: bool = Query(False)):
             if not is_playlist:
                 cmd.append("--no-playlist")
 
-            # Add browser cookies arguments if available
-            if check_browser_available(DEFAULT_BROWSER):
-                cmd.extend(["--cookies-from-browser", DEFAULT_BROWSER])
-            else:
-                logger.info(
-                    "Skipping browser cookies for formats subprocess call as they're not available"
-                )
-
+            # Add cookie arguments
+            cmd.extend(cookie_args)
             cmd.append(clean_url)
 
             logger.info(f"Running command: {' '.join(cmd)}")
@@ -690,6 +962,13 @@ async def get_formats(url: HttpUrl, is_playlist: bool = Query(False)):
     except Exception as e:
         logger.exception(f"Error fetching formats: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        # Clean up any cookie files
+        if cookie_file:
+            try:
+                cookie_manager.delete_cookie_file(Path(cookie_file))
+            except Exception as e:
+                logger.warning(f"Error cleaning up cookie file: {e}")
 
 
 @app.get("/api/browser_status", response_model=BrowserStatusResponse)
@@ -717,6 +996,22 @@ async def get_browser_status():
 
     return BrowserStatusResponse(
         browser=browser, is_available=is_available, message=message
+    )
+
+
+@app.get("/api/cookie_status", response_model=CookieStatusResponse)
+async def get_cookie_status():
+    """Get status information about available cookie options."""
+    browser_available = check_browser_available(DEFAULT_BROWSER)
+    
+    message = "Both client-side and browser cookies are supported."
+    if not browser_available:
+        message = f"Browser {DEFAULT_BROWSER} is not available. Client-side cookies are recommended."
+    
+    return CookieStatusResponse(
+        browser_cookies_available=browser_available,
+        client_cookies_supported=True,
+        message=message
     )
 
 
@@ -748,7 +1043,7 @@ async def cleanup_old_downloads(days: int = 7):
 @app.get("/")
 async def root():
     """API root endpoint."""
-    # Check browser availability once at startup for better error messages
+    # Check browser and cookie availability for better error messages
     browser_available = check_browser_available(DEFAULT_BROWSER)
     browser_status_message = (
         f"Browser {DEFAULT_BROWSER} is available for cookie extraction"
@@ -762,6 +1057,11 @@ async def root():
         "message": "YT-DLP API is running",
         "version": "1.0.0",
         "documentation": "/docs",
+        "cookie_status": {
+            "browser_cookies_available": browser_available,
+            "client_cookies_supported": True,
+            "message": "Client-side cookies are supported for authentication."
+        },
         "browser_status": {
             "browser": DEFAULT_BROWSER,
             "is_available": browser_available,

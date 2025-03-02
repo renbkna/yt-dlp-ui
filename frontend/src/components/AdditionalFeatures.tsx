@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { DownloadOptions } from "@/types"
 import { 
   ShieldAlert, 
-  Cookie, 
   FastForward, 
   Bookmark, 
   Info,
@@ -17,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { ClientCookieExtractor } from "@/components/ClientCookieExtractor"
 
 interface AdditionalFeaturesProps {
   downloadOptions: DownloadOptions
@@ -24,6 +24,16 @@ interface AdditionalFeaturesProps {
 }
 
 export function AdditionalFeatures({ downloadOptions, updateDownloadOption }: AdditionalFeaturesProps) {
+  // Handle cookie extraction
+  const handleCookiesChange = (enabled: boolean, cookies: any[] | undefined) => {
+    updateDownloadOption("useBrowserCookies", enabled);
+    if (cookies) {
+      updateDownloadOption("clientCookies", cookies);
+    } else {
+      updateDownloadOption("clientCookies", undefined);
+    }
+  };
+  
   return (
     <Card className="dark:border-primary/20 border-secondary/30 rounded-xl shadow-sm">
       <CardHeader className="pb-3 dark:bg-primary/5 bg-secondary/10 border-b dark:border-primary/20 border-secondary/20">
@@ -76,36 +86,11 @@ export function AdditionalFeatures({ downloadOptions, updateDownloadOption }: Ad
                 />
               </div>
               
-              <div className="flex items-center justify-between p-3 rounded-lg dark:hover:bg-primary/5 hover:bg-secondary/5 transition-colors
-                dark:border-primary/20 border-secondary/20">
-                <div className="flex items-center space-x-3">
-                  <div className="p-1.5 rounded-full dark:bg-amber-500/10 bg-amber-500/10">
-                    <Cookie className="h-4 w-4 dark:text-amber-400 text-amber-500" />
-                  </div>
-                  <div>
-                    <Label htmlFor="browser-cookies" className="cursor-pointer font-medium flex items-center">
-                      Use browser cookies
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-3.5 w-3.5 dark:text-primary-foreground/40 text-secondary-foreground/40 ml-1.5 cursor-pointer" />
-                        </TooltipTrigger>
-                        <TooltipContent side="right" className="max-w-xs dark:bg-background bg-white dark:border-primary/30 border-secondary/30">
-                          <p>Extract cookies from browser installed on the server to authenticate with YouTube. Required for age-restricted content.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </Label>
-                    <p className="text-xs dark:text-primary-foreground/60 text-secondary-foreground/60 mt-1">
-                      Access age-restricted content and signed-in features
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  id="browser-cookies"
-                  checked={downloadOptions.useBrowserCookies}
-                  onCheckedChange={(v) => updateDownloadOption("useBrowserCookies", v)}
-                  className="data-[state=checked]:dark:bg-amber-500 data-[state=checked]:bg-amber-500"
-                />
-              </div>
+              {/* Client cookie extractor component replaces the old browser cookies toggle */}
+              <ClientCookieExtractor 
+                cookiesEnabled={downloadOptions.useBrowserCookies}
+                onCookiesChange={handleCookiesChange}
+              />
               
               <div className="flex items-center justify-between p-3 rounded-lg dark:hover:bg-primary/5 hover:bg-secondary/5 transition-colors
                 dark:border-primary/20 border-secondary/20">
