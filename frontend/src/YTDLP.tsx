@@ -192,9 +192,14 @@ const YTDLPPage = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(infoPayload)
         }),
-        fetch(`${API_BASE}/formats?url=${encodeURIComponent(url)}&is_playlist=${isPlaylist}`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
+        fetch(`${API_BASE}/formats`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: url,
+            is_playlist: isPlaylist,
+            cookies: downloadOptions.clientCookies
+          })
         })
       ]);
       
