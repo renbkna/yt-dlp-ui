@@ -31,10 +31,15 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Get allowed origins from environment variable or default to ["*"]
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "*")
+if allowed_origins != "*":
+    allowed_origins = allowed_origins.split(",")
+
 # CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For production, replace with specific origins
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -90,7 +95,7 @@ class FormatsResponse(BaseModel):
 
 
 download_tasks: Dict[str, DownloadStatus] = {}
-DOWNLOAD_DIR = Path("downloads")
+DOWNLOAD_DIR = Path(os.getenv("DOWNLOAD_DIR", "downloads"))
 DOWNLOAD_DIR.mkdir(exist_ok=True)
 
 
@@ -170,7 +175,7 @@ def get_ytdlp_options(request: DownloadRequest, task_id: str) -> dict:
 
     # Add cookie file if available and requested
     if request.cookies:
-        cookie_file = Path("cookies.txt")
+        cookie_file = Path(os.getenv("COOKIE_FILE", "cookies.txt"))
         if cookie_file.exists():
             options["cookiefile"] = str(cookie_file)
 
@@ -529,4 +534,8 @@ async def root():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Get port and host from environment variables or default values
+    port = int(os.getenv("PORT", 8000))
+    host = os.getenv("HOST", "0.0.0.0")
+
+    uvicorn.run(app, host=host, port=port)
