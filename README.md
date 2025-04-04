@@ -2,7 +2,7 @@
 
 A sleek web-based interface for downloading videos and audio from YouTube and other platforms using [yt-dlp](https://github.com/yt-dlp/yt-dlp). This project combines a **React** front-end with a **FastAPI** back-end, allowing users to fetch video information, choose formats and additional download options, and monitor download progress in real time.
 
-![Ren YT-DLP](https://github.com/renbkna/renytdlp/raw/main/frontend/public/yt-dlp-ui.png)
+![Ren YT-DLP](/frontend/public/yt-dlp-ui.png)
 
 ## ✨ Features
 
