@@ -6,37 +6,37 @@ A sleek web-based interface for downloading videos and audio from YouTube and ot
 
 ## ✨ Features
 
-- **Video & Playlist Support**  
+- **Video & Playlist Support**
   Download individual videos or entire playlists from YouTube and many other platforms
 
-- **Multi-Platform Support**  
+- **Multi-Platform Support**
   Support for various video sources including YouTube, TikTok, Instagram, Twitter, and many more
 
-- **Premium Format Support**  
+- **Premium Format Support**
   Access to premium quality options including 8K, HDR, and Dolby content (when available)
 
-- **Audio Extraction**  
+- **Audio Extraction**
   Extract audio in various formats (MP3, M4A, OPUS, FLAC, WAV, OGG) with customizable quality
 
-- **Format Selection**  
+- **Format Selection**
   Choose from available video formats with detailed information about resolution, codecs, and file size
 
-- **Metadata Options**  
+- **Metadata Options**
   Embed metadata, thumbnails, and save additional information like descriptions and comments
 
-- **Subtitle Support**  
+- **Subtitle Support**
   Download subtitles in multiple languages with easy language selection
 
-- **SponsorBlock Integration**  
+- **SponsorBlock Integration**
   Skip ads, intros, outros, and other segments automatically using SponsorBlock data
 
-- **Accurate Download Progress Tracking**  
+- **Accurate Download Progress Tracking**
   Monitor the progress of downloads with real-time status updates and precise progress indicators
 
-- **Client-Side Cookie Extraction**  
+- **Client-Side Cookie Extraction**
   Extract YouTube authentication cookies directly from your browser for age-restricted content
 
-- **Beautiful Themes**  
+- **Beautiful Themes**
   Switch between light theme and dark theme
 
 ## 🚀 Installation
@@ -45,6 +45,7 @@ A sleek web-based interface for downloading videos and audio from YouTube and ot
 
 - [Node.js](https://nodejs.org/) (v16 or later)
 - [Python 3.8+](https://www.python.org/downloads/)
+- [FFmpeg](https://ffmpeg.org/download.html) (Required for audio conversion and post-processing)
 
 ### Clone the Repository
 
@@ -117,7 +118,7 @@ cd frontend
 npm run dev
 ```
 
-The application will be available at http://localhost:5173
+The application will be available at <http://localhost:5173>
 
 ### Production Mode
 
@@ -135,7 +136,7 @@ cd server
 python main.py
 ```
 
-3. The application will be available at http://localhost:8000
+3. The application will be available at <http://localhost:8000>
 
 ## 🌐 Deployment
 
@@ -172,28 +173,28 @@ For more detailed deployment instructions, see the README.md files in the fronte
 
 ## 📝 Usage Guide
 
-1. **Enter a URL**  
+1. **Enter a URL**
    Enter a video or playlist URL from YouTube, TikTok, Instagram, Twitter, or any other supported platform.
 
-2. **Fetch Video Information**  
+2. **Fetch Video Information**
    Click "Get Video Information" to retrieve available formats and details.
 
-3. **Choose Download Options**  
+3. **Choose Download Options**
    - **Extract Audio Only**: Toggle this to download only the audio track
    - **Video Format**: Select your preferred resolution and format (including premium formats)
    - **Metadata Options**: Choose what metadata to embed or save
    - **Subtitle Options**: Select languages for subtitle download
    - **Additional Features**: Enable SponsorBlock, cookies, and other advanced features
 
-4. **Authentication for Age-Restricted Content**  
+4. **Authentication for Age-Restricted Content**
    - Enable "Use browser cookies" in the Additional Features section
    - The application will extract cookies from your browser for authentication
    - This allows downloading age-restricted content without server-side browser configuration
 
-5. **Start Download**  
+5. **Start Download**
    Click "Start Download" and monitor progress in real-time with accurate percentage indicators
 
-6. **View Downloaded Files**  
+6. **View Downloaded Files**
    Once complete, access your files in the downloads folder
 
 ## 🎨 Themes
@@ -216,4 +217,4 @@ This project is licensed under the [MIT License](LICENSE).
 ## 🙏 Credits
 
 - **Project Built by**: [renbkna](https://github.com/renbkna/yt-dlp-ui)
-- **Powered by**: [yt-dlp](https://github.com/yt-dlp/yt-dlp-ui)
+- **Powered by**: [yt-dlp](https://github.com/yt-dlp)
