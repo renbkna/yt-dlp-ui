@@ -10,7 +10,7 @@ The original implementation relied exclusively on server-side browser cookies fo
 
 The new implementation adopts a hybrid approach that combines both client-side and server-side cookie handling:
 
-1. **Client-Side Cookie Extraction**: 
+1. **Client-Side Cookie Extraction**:
    - Extracts relevant YouTube authentication cookies directly from the user's browser
    - Works across all hosting environments without requiring server-side browser installations
    - Handles age-restricted content and YouTube's anti-bot verification
