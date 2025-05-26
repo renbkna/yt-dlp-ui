@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Ren YT-DLP Cookie Helper",
+  "version": "1.0.0",
+  "description": "Extract YouTube cookies for Ren YT-DLP to download age-restricted and premium content",
+
+  "permissions": ["cookies", "storage"],
+
+  "host_permissions": ["*://*.youtube.com/*", "*://*.google.com/*"],
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Extract YouTube Cookies for Ren YT-DLP",
+    "default_icon": {
+      "16": "icon.png",
+      "32": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  },
+
+  "icons": {
+    "16": "icon.png",
+    "32": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+
+  "author": "Ren YT-DLP Team",
+  "homepage_url": "https://github.com/renbkna/renytdlp"
+}

@@ -1,16 +1,17 @@
 from fastapi import (
     FastAPI,
     HTTPException,
-    BackgroundTasks,
     Query,
     Request,
     Depends,
     File,
     UploadFile,
 )
+from fastapi.responses import StreamingResponse
+from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, HttpUrl, Field, validator
+from pydantic import BaseModel, HttpUrl, Field, field_validator
 from typing import Optional, List, Dict, Union, Any
 import yt_dlp
 import asyncio
@@ -23,45 +24,103 @@ import json
 import tempfile
 import subprocess
 import shutil
+import io
 from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("yt_dlp_api.log"), logging.StreamHandler()],
-)
-logger = logging.getLogger("yt-dlp-api")
+# Import our new secure components
+from config import settings
+from security import RateLimitMiddleware, SecurityValidator, APIKeyAuth
 
-# Browser to use for cookie extraction - can be set via environment variable
-# Options: chrome, chromium, firefox, opera, edge, safari, brave, vivaldi
-DEFAULT_BROWSER = os.getenv("YT_DLP_BROWSER", "chrome")
+# Database import removed - no longer using database
 
-# Cookie file configuration
-COOKIE_DIR = os.getenv("COOKIE_DIR", tempfile.gettempdir())
-COOKIE_EXPIRY_HOURS = int(os.getenv("COOKIE_EXPIRY_HOURS", "1"))
+# Configure enhanced logging
+if settings.structured_logging:
+    import structlog
+
+    structlog.configure(
+        processors=[
+            structlog.stdlib.filter_by_level,
+            structlog.stdlib.add_logger_name,
+            structlog.stdlib.add_log_level,
+            structlog.stdlib.PositionalArgumentsFormatter(),
+            structlog.processors.TimeStamper(fmt="iso"),
+            structlog.processors.StackInfoRenderer(),
+            structlog.processors.format_exc_info,
+            structlog.processors.JSONRenderer(),
+        ],
+        context_class=dict,
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        wrapper_class=structlog.stdlib.BoundLogger,
+        cache_logger_on_first_use=True,
+    )
+    logger = structlog.get_logger("yt-dlp-api")
+else:
+    logging.basicConfig(
+        level=getattr(logging, settings.log_level.upper()),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[
+            (
+                logging.FileHandler(settings.log_file)
+                if settings.log_file
+                else logging.NullHandler()
+            ),
+            logging.StreamHandler(),
+        ],
+    )
+    logger = logging.getLogger("yt-dlp-api")
+
+# Use configuration values
+DEFAULT_BROWSER = settings.default_browser
+COOKIE_DIR = settings.cookie_dir
+COOKIE_EXPIRY_HOURS = settings.cookie_expiry_hours
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager."""
+    # Startup
+    logger.info("YT-DLP API starting up...")
+    logger.info(f"Download directory: {settings.download_dir}")
+    logger.info(f"Max concurrent downloads: {settings.max_concurrent_downloads}")
+    logger.info(f"Rate limit: {settings.max_requests_per_minute} requests/minute")
+
+    # Server-side task management removed - using direct downloads only
+    logger.info("Using direct download mode only")
+
+    yield
+
+    # Shutdown
+    logger.info("YT-DLP API shutting down...")
+    logger.info("YT-DLP API shutdown complete")
+
 
 app = FastAPI(
     title="YT-DLP API",
-    description="API for downloading videos using yt-dlp",
-    version="1.0.0",
+    description="Secure API for downloading videos using yt-dlp",
+    version="1.0.1",
+    debug=settings.debug,
+    lifespan=lifespan,
 )
 
-# Get allowed origins from environment variable or default to ["*"]
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "*")
-if allowed_origins != "*":
-    allowed_origins = allowed_origins.split(",")
+# Add security middleware
+app.add_middleware(
+    RateLimitMiddleware,
+    calls_per_minute=settings.max_requests_per_minute,
+)
 
-# CORS Configuration
+# Secure CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    allow_credentials=True,  # Allow credentials for cookie passing
+    allow_origins=settings.allowed_origins,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],  # Specific methods only
+    allow_headers=["Content-Type", "Authorization"],  # Specific headers only
+    allow_credentials=True,
 )
+
+# Optional API key authentication
+api_key_auth = APIKeyAuth(settings.api_key)
 
 
 class Cookie(BaseModel):
@@ -75,14 +134,16 @@ class Cookie(BaseModel):
     httpOnly: bool = False
     expirationDate: Optional[float] = None
 
-    @validator("domain")
+    @field_validator("domain")
+    @classmethod
     def validate_domain(cls, v):
         # Basic domain validation - this could be enhanced
         if not re.match(r"^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", v):
             raise ValueError("Invalid domain format")
         return v
 
-    @validator("name", "value")
+    @field_validator("name", "value")
+    @classmethod
     def no_semicolons(cls, v):
         if ";" in v:
             raise ValueError("Semicolons not allowed in cookie name/value")
@@ -114,7 +175,7 @@ class DownloadRequest(BaseModel):
         default=False, description="Download all videos in playlist"
     )
     sponsorblock: bool = Field(default=False, description="Skip sponsored segments")
-    use_browser_cookies: bool = Field(default=True, description="Use browser cookies")
+    use_browser_cookies: bool = Field(default=False, description="Use browser cookies")
     client_cookies: Optional[List[Cookie]] = Field(
         default=None, description="Cookies provided by the client"
     )
@@ -123,7 +184,7 @@ class DownloadRequest(BaseModel):
     )
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                 "format": "22",
@@ -149,21 +210,6 @@ class VideoInfoRequest(BaseModel):
     url: HttpUrl
     is_playlist: bool = False
     cookies: Optional[List[Cookie]] = None
-
-
-class DownloadResponse(BaseModel):
-    task_id: str
-    status: str
-    message: str
-
-
-class DownloadStatus(BaseModel):
-    status: str
-    progress: float
-    filename: Optional[str] = None
-    error: Optional[str] = None
-    eta: Optional[int] = None
-    speed: Optional[str] = None
 
 
 class VideoInfoResponse(BaseModel):
@@ -205,9 +251,7 @@ class CookieStatusResponse(BaseModel):
     message: str
 
 
-download_tasks: Dict[str, DownloadStatus] = {}
-DOWNLOAD_DIR = Path(os.getenv("DOWNLOAD_DIR", "downloads"))
-DOWNLOAD_DIR.mkdir(exist_ok=True)
+# Direct download mode only - no server storage needed
 
 
 class CookieManager:
@@ -299,14 +343,54 @@ class CookieManager:
 cookie_manager = CookieManager()
 
 
-# Custom exception handlers
+# Enhanced exception handlers
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Handle HTTP exceptions with better error messages."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": "HTTP Error",
+            "status_code": exc.status_code,
+            "message": exc.detail,
+            "path": request.url.path,
+            "timestamp": datetime.now().isoformat(),
+        },
+    )
+
+
+@app.exception_handler(ValueError)
+async def value_error_handler(request: Request, exc: ValueError):
+    """Handle validation errors."""
+    logger.warning(f"Validation error: {str(exc)}")
+    return JSONResponse(
+        status_code=400,
+        content={
+            "error": "Validation Error",
+            "status_code": 400,
+            "message": str(exc),
+            "path": request.url.path,
+            "timestamp": datetime.now().isoformat(),
+        },
+    )
+
+
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
+    """Handle unexpected errors gracefully."""
     logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
     return JSONResponse(
         status_code=500,
         content={
-            "detail": "An unexpected error occurred. Please check the server logs."
+            "error": "Internal Server Error",
+            "status_code": 500,
+            "message": (
+                "An unexpected error occurred. The issue has been logged."
+                if not settings.debug
+                else str(exc)
+            ),
+            "path": request.url.path,
+            "timestamp": datetime.now().isoformat(),
         },
     )
 
@@ -350,15 +434,14 @@ def check_browser_available(browser: str = DEFAULT_BROWSER) -> bool:
         if result.returncode != 0 or "could not find" in result.stderr.decode(
             "utf-8", "ignore"
         ):
-            logger.warning(
+            # Only log as debug since this is expected on many systems
+            logger.debug(
                 f"Browser {browser} cookies not accessible: {result.stderr.decode('utf-8', 'ignore')}"
             )
             return False
         return True
     except Exception as e:
-        logger.warning(
-            f"Browser {browser} not available for cookie extraction: {str(e)}"
-        )
+        logger.debug(f"Browser {browser} not available for cookie extraction: {str(e)}")
         return False
 
 
@@ -395,8 +478,8 @@ def get_yt_dlp_base_args(
             logger.info(f"Using cookies from browser: {DEFAULT_BROWSER}")
             args.extend(["--cookies-from-browser", DEFAULT_BROWSER])
         else:
-            logger.warning(
-                f"Browser cookies requested but {DEFAULT_BROWSER} is not available"
+            logger.info(
+                f"Browser cookies requested but {DEFAULT_BROWSER} is not available (this is normal on many systems)"
             )
 
     return args, cookie_file
@@ -405,8 +488,48 @@ def get_yt_dlp_base_args(
 def get_ytdlp_options(request: DownloadRequest, task_id: str) -> dict:
     """Generate yt-dlp options based on download request with premium quality support."""
     chosen_format = request.format
-    if request.extract_audio and (chosen_format == "best" or chosen_format == ""):
-        chosen_format = "bestaudio"
+
+    # Smart audio extraction logic
+    extract_audio_postprocessor = False
+    if request.extract_audio:
+        if chosen_format == "best" or chosen_format == "":
+            # User wants to extract audio but didn't specify format - use bestaudio + convert
+            chosen_format = "bestaudio"
+            extract_audio_postprocessor = True
+        else:
+            # User selected a specific format
+            # Check if it's a known audio-only format
+            audio_only_formats = {
+                "140",
+                "141",
+                "171",
+                "250",
+                "251",
+                "249",
+                "139",
+                "138",
+                "bestaudio",
+                "worstaudio",
+            }
+
+            if chosen_format in audio_only_formats:
+                # It's already audio-only, no need for post-processing
+                # Just download the format directly
+                extract_audio_postprocessor = False
+                logger.info(
+                    f"Using audio-only format {chosen_format} directly without post-processing"
+                )
+            else:
+                # It's a video format, so we need to extract audio
+                extract_audio_postprocessor = True
+                logger.info(
+                    f"Using video format {chosen_format} with audio extraction to {request.audio_format}"
+                )
+
+    # Log the final decision for debugging
+    logger.info(
+        f"Final format: {chosen_format}, Extract audio: {extract_audio_postprocessor}"
+    )
 
     # Build output template with date-based organization
     now = datetime.now()
@@ -451,9 +574,18 @@ def get_ytdlp_options(request: DownloadRequest, task_id: str) -> dict:
         "retries": 10,  # More retries for stability
         "fragment_retries": 10,
         "file_access_retries": 5,
+        "sleep_interval_requests": 0.5,  # Wait between retries
+        "socket_timeout": 30,  # Socket timeout
         "retry_sleep_functions": {"http": lambda n: 1.0 * (2 ** (n - 1))},
         "allow_unplayable_formats": True,  # Allow premium formats
         "check_formats": False,  # Don't skip formats that might not be playable
+        "overwrites": True,  # Always overwrite existing files
+        "continue_dl": False,  # Don't continue partial downloads
+        "nopart": True,  # Don't use .part files
+        "force_overwrites": True,  # Force overwrite even if file exists
+        "cachedir": False,  # Disable caching to prevent conflicts
+        "break_on_existing": False,  # CRITICAL: Don't skip downloads for existing files
+        "download_archive": None,  # CRITICAL: Disable download archive completely
     }
 
     # Get cookie arguments - handle both client and browser cookies
@@ -476,8 +608,8 @@ def get_ytdlp_options(request: DownloadRequest, task_id: str) -> dict:
             None,
         )
 
-    # Extract audio if requested
-    if request.extract_audio:
+    # Extract audio if requested (only if we determined post-processing is needed)
+    if extract_audio_postprocessor:
         options["postprocessors"].append(
             {
                 "key": "FFmpegExtractAudio",
@@ -492,9 +624,14 @@ def get_ytdlp_options(request: DownloadRequest, task_id: str) -> dict:
 
     # Add chapters from comments if requested
     if request.chapters_from_comments:
-        options["postprocessors"].append({"key": "SponsorBlock"})
+        # Enable chapter extraction from comments
+        options["writeinfojson"] = True
+        options["writedescription"] = True
+        options["extract_comments"] = True
+        options["getcomments"] = True
+        # Add postprocessor to extract chapters from comments/description
         options["postprocessors"].append(
-            {"key": "Exec", "exec_cmd": "echo Chapter extraction complete."}
+            {"key": "FFmpegMetadata", "add_chapters": True, "add_metadata": True}
         )
 
     return options
@@ -512,6 +649,18 @@ def format_speed(speed_bytes: float) -> str:
         return f"{speed_bytes / (1024 * 1024 * 1024):.2f}GB/s"
 
 
+def format_size(size_bytes: float) -> str:
+    """Format file size for display."""
+    if size_bytes < 1024:
+        return f"{size_bytes:.0f}B"
+    elif size_bytes < 1024 * 1024:
+        return f"{size_bytes / 1024:.1f}KB"
+    elif size_bytes < 1024 * 1024 * 1024:
+        return f"{size_bytes / (1024 * 1024):.1f}MB"
+    else:
+        return f"{size_bytes / (1024 * 1024 * 1024):.2f}GB"
+
+
 def cleanup_cookie_file(options: dict):
     """Clean up any cookie file created for the download."""
     if "cookie_file" in options and options["cookie_file"]:
@@ -522,131 +671,6 @@ def cleanup_cookie_file(options: dict):
                 logger.info(f"Cleaned up cookie file: {cookie_file}")
         except Exception as e:
             logger.warning(f"Error cleaning up cookie file: {e}")
-
-
-def update_progress(task_id: str, d: dict):
-    """Update download progress information with improved accuracy."""
-    try:
-        if d["status"] == "downloading":
-            if d.get("_type") == "playlist":
-                download_tasks[task_id].filename = (
-                    f"Playlist: {d.get('info_dict', {}).get('title', 'Unknown')}"
-                )
-                try:
-                    # Calculate playlist progress accurately
-                    progress = (
-                        d.get("playlist_index", 0) / d.get("playlist_count", 1)
-                    ) * 100
-                except:
-                    progress = 0.0
-            else:
-                try:
-                    # Calculate download progress using available byte information
-                    if "total_bytes" in d:
-                        progress = (
-                            float(d["downloaded_bytes"]) / float(d["total_bytes"]) * 100
-                        )
-                    elif "total_bytes_estimate" in d:
-                        progress = (
-                            float(d["downloaded_bytes"])
-                            / float(d["total_bytes_estimate"])
-                            * 100
-                        )
-                    else:
-                        # For streams without size information, use provided progress if available
-                        progress = float(d.get("downloaded_percent", 0))
-                except:
-                    progress = 0.0
-
-                # Update speed and ETA information with proper formatting
-                if "speed" in d and d["speed"] is not None:
-                    download_tasks[task_id].speed = format_speed(d["speed"])
-
-                if "eta" in d and d["eta"] is not None:
-                    download_tasks[task_id].eta = d["eta"]
-
-                download_tasks[task_id].filename = d.get("filename", "").split("/")[-1]
-
-            download_tasks[task_id].progress = min(
-                progress, 99.9
-            )  # Cap at 99.9% until fully complete
-            download_tasks[task_id].status = (
-                "downloading"  # Ensure status is set correctly
-            )
-
-        elif d["status"] == "finished":
-            if (
-                "ext" in d
-                and d["ext"]
-                and d["ext"] != d.get("info_dict", {}).get("ext", "")
-            ):
-                # When converted to a different format, we show "processing"
-                download_tasks[task_id].status = "processing"
-                download_tasks[task_id].progress = 99.9
-            else:
-                download_tasks[task_id].status = "completed"
-                download_tasks[task_id].progress = 100.0
-                download_tasks[task_id].speed = None
-                download_tasks[task_id].eta = None
-
-        elif d["status"] == "error":
-            download_tasks[task_id].status = "error"
-            download_tasks[task_id].error = str(d.get("error", "Unknown error"))
-            logger.error(
-                f"Download error for task {task_id}: {download_tasks[task_id].error}"
-            )
-
-    except Exception as e:
-        logger.exception(f"Error updating progress for task {task_id}: {str(e)}")
-
-
-async def download_task(task_id: str, request: DownloadRequest):
-    """Background task for video download."""
-    start_time = time.time()
-    options = None
-    try:
-        task_dir = DOWNLOAD_DIR / task_id
-        task_dir.mkdir(exist_ok=True)
-
-        logger.info(f"Starting download task {task_id} for URL: {request.url}")
-
-        # Get options with cookie integration
-        options = get_ytdlp_options(request, task_id)
-
-        # Log cookie usage but protect sensitive info
-        cookie_type = (
-            "client"
-            if request.client_cookies
-            else ("browser" if request.use_browser_cookies else "none")
-        )
-        logger.info(f"Using cookies ({cookie_type}) for task {task_id}")
-
-        with yt_dlp.YoutubeDL(options) as ydl:
-            download_tasks[task_id] = DownloadStatus(
-                status="downloading", progress=0.0, eta=None, speed=None
-            )
-            ydl.add_progress_hook(lambda d: update_progress(task_id, d))
-            await asyncio.get_running_loop().run_in_executor(
-                None, lambda: ydl.download([str(request.url)])
-            )
-
-            # If status is still "downloading" at this point, we force it to "completed"
-            if download_tasks[task_id].status == "downloading":
-                download_tasks[task_id].status = "completed"
-                download_tasks[task_id].progress = 100.0
-
-        duration = time.time() - start_time
-        logger.info(f"Download task {task_id} completed in {duration:.2f} seconds")
-
-    except Exception as e:
-        logger.exception(f"Error in download task {task_id}: {str(e)}")
-        download_tasks[task_id] = DownloadStatus(
-            status="error", progress=0.0, error=str(e), eta=None, speed=None
-        )
-    finally:
-        # Clean up any cookie files
-        if options:
-            cleanup_cookie_file(options)
 
 
 @app.post("/api/cookies", response_model=CookieStatusResponse)
@@ -685,23 +709,457 @@ async def upload_cookies(cookies: CookieUpload):
         )
 
 
-@app.post("/api/download", response_model=DownloadResponse)
-async def start_download(request: DownloadRequest, background_tasks: BackgroundTasks):
-    """Start a new download task."""
-    task_id = str(uuid.uuid4())
-    logger.info(f"Creating download task {task_id} for URL: {request.url}")
-    background_tasks.add_task(download_task, task_id, request)
-    return DownloadResponse(
-        task_id=task_id, status="started", message="Download started"
+# Helper functions for streaming downloads
+def sanitize_filename(filename: str) -> str:
+    """Remove invalid characters from filename."""
+    # Remove invalid filename characters
+    invalid_chars = '<>:"/\\|?*'
+    for char in invalid_chars:
+        filename = filename.replace(char, "_")
+
+    # Remove extra spaces and truncate if too long
+    filename = " ".join(filename.split())
+    return filename[:100] if len(filename) > 100 else filename
+
+
+def get_extension_from_format(
+    format_code: str, extract_audio: bool, audio_format: str
+) -> str:
+    """Determine file extension based on format selection."""
+    if extract_audio:
+        return audio_format or "mp3"
+
+    # Common video format mappings
+    format_extensions = {
+        "18": "mp4",  # 360p MP4
+        "22": "mp4",  # 720p MP4
+        "137": "mp4",  # 1080p MP4
+        "best": "mp4",
+        "worst": "mp4",
+        "bestvideo": "mp4",
+        "bestaudio": "m4a",
+    }
+
+    return format_extensions.get(format_code, "mp4")
+
+
+def get_content_type(extension: str) -> str:
+    """Get MIME type for file extension."""
+    content_types = {
+        "mp4": "video/mp4",
+        "webm": "video/webm",
+        "mkv": "video/x-matroska",
+        "avi": "video/x-msvideo",
+        "mp3": "audio/mpeg",
+        "m4a": "audio/mp4",
+        "ogg": "audio/ogg",
+        "wav": "audio/wav",
+    }
+    return content_types.get(extension, "application/octet-stream")
+
+
+def get_streaming_ytdlp_options(request: DownloadRequest, task_id: str) -> dict:
+    """Generate yt-dlp options for streaming downloads."""
+    chosen_format = request.format
+
+    # Smart audio extraction logic (same as main function)
+    extract_audio_postprocessor = False
+    if request.extract_audio:
+        if chosen_format == "best" or chosen_format == "":
+            # User wants to extract audio but didn't specify format - use bestaudio + convert
+            chosen_format = "bestaudio"
+            extract_audio_postprocessor = True
+        else:
+            # User selected a specific format
+            # Check if it's a known audio-only format
+            audio_only_formats = {
+                "140",
+                "141",
+                "171",
+                "250",
+                "251",
+                "249",
+                "139",
+                "138",
+                "bestaudio",
+                "worstaudio",
+            }
+
+            if chosen_format in audio_only_formats:
+                # It's already audio-only, no need for post-processing
+                extract_audio_postprocessor = False
+                logger.info(
+                    f"Streaming: Using audio-only format {chosen_format} directly"
+                )
+            else:
+                # It's a video format, so we need to extract audio
+                extract_audio_postprocessor = True
+                logger.info(
+                    f"Streaming: Using video format {chosen_format} with audio extraction"
+                )
+
+    logger.info(
+        f"Streaming final format: {chosen_format}, Extract audio: {extract_audio_postprocessor}"
     )
 
+    options = {
+        "format": chosen_format,
+        "quiet": False,
+        "no_warnings": False,
+        "retries": 3,
+        "fragment_retries": 3,
+        "socket_timeout": 30,
+        "postprocessors": [],
+        "overwrites": True,  # Always overwrite existing files
+        "continue_dl": False,  # Don't continue partial downloads
+        "nopart": True,  # Don't use .part files
+        "force_overwrites": True,  # Force overwrite even if file exists
+        "no_check_certificate": False,  # Keep certificate checks
+        "cachedir": False,  # Disable caching to prevent conflicts
+        "break_on_existing": False,  # CRITICAL: Don't skip downloads for existing files
+        "download_archive": None,  # CRITICAL: Disable download archive completely
+    }
 
-@app.get("/api/status/{task_id}", response_model=DownloadStatus)
-async def get_status(task_id: str):
-    """Get status of a download task."""
-    if task_id not in download_tasks:
-        raise HTTPException(status_code=404, detail="Task not found")
-    return download_tasks[task_id]
+    # Get cookie arguments
+    cookie_args, cookie_file = get_yt_dlp_base_args(
+        request.use_browser_cookies, request.client_cookies, task_id
+    )
+
+    # Add cookie arguments to options
+    if "--cookies" in cookie_args:
+        options["cookies"] = cookie_args[cookie_args.index("--cookies") + 1]
+    elif "--cookies-from-browser" in cookie_args:
+        options["cookiesfrombrowser"] = (
+            cookie_args[cookie_args.index("--cookies-from-browser") + 1],
+            None,
+            None,
+            None,
+        )
+
+    # Extract audio if requested (only if we determined post-processing is needed)
+    if extract_audio_postprocessor:
+        options["postprocessors"].append(
+            {
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": request.audio_format or "mp3",
+                "preferredquality": request.quality or "0",
+            }
+        )
+
+    return options
+
+
+@app.post("/api/download/stream")
+async def stream_download(
+    request: DownloadRequest,
+    auth: Optional[str] = Depends(api_key_auth),
+):
+    """Stream download directly to user without server storage."""
+    # Enhanced security validation
+    validated_url = SecurityValidator.validate_url(str(request.url))
+
+    # Validate cookies if provided
+    if request.client_cookies:
+        cookie_dicts = [cookie.dict() for cookie in request.client_cookies]
+        validated_cookies = SecurityValidator.validate_cookie_data(cookie_dicts)
+        request.client_cookies = [Cookie(**cookie) for cookie in validated_cookies]
+
+    task_id = str(uuid.uuid4())
+    logger.info(f"Starting streaming download {task_id} for URL: {validated_url}")
+
+    # Get yt-dlp options for streaming
+    options = get_streaming_ytdlp_options(request, task_id)
+
+    # Get video info first to determine filename and content type
+    try:
+        with yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True}) as ydl:
+            info = await asyncio.get_running_loop().run_in_executor(
+                None, lambda: ydl.extract_info(str(validated_url), download=False)
+            )
+
+        # Determine filename and content type based on format
+        filename = info.get("title", "download")
+        ext = get_extension_from_format(
+            request.format, request.extract_audio, request.audio_format
+        )
+        safe_filename = f"{sanitize_filename(filename)}.{ext}"
+        content_type = get_content_type(ext)
+
+        logger.info(f"Streaming {safe_filename} as {content_type}")
+
+        # Create streaming generator
+        async def download_generator():
+            temp_dir = None
+            try:
+                # Create temporary directory for download
+                temp_dir = tempfile.mkdtemp()
+
+                # Set output template with proper extension
+                if request.extract_audio:
+                    # For audio extraction, let yt-dlp handle the extension after post-processing
+                    output_template = os.path.join(
+                        temp_dir, f"{sanitize_filename(filename)}.%(ext)s"
+                    )
+                else:
+                    # For video, use the determined extension
+                    output_template = os.path.join(temp_dir, safe_filename)
+
+                options["outtmpl"] = output_template
+
+                logger.info(f"Downloading to: {output_template}")
+                logger.info(f"Options: {options}")
+
+                with yt_dlp.YoutubeDL(options) as ydl:
+                    await asyncio.get_running_loop().run_in_executor(
+                        None, lambda: ydl.download([str(validated_url)])
+                    )
+
+                # Find the actual downloaded file(s)
+                downloaded_files = []
+                for file_path in os.listdir(temp_dir):
+                    full_path = os.path.join(temp_dir, file_path)
+                    if os.path.isfile(full_path) and os.path.getsize(full_path) > 0:
+                        downloaded_files.append(full_path)
+
+                if not downloaded_files:
+                    raise Exception("No valid files were downloaded")
+
+                # Use the first (and usually only) downloaded file
+                download_path = downloaded_files[0]
+                actual_filename = os.path.basename(download_path)
+
+                logger.info(
+                    f"Found downloaded file: {actual_filename} ({os.path.getsize(download_path)} bytes)"
+                )
+
+                # Update filename and content type based on actual file
+                actual_ext = os.path.splitext(actual_filename)[1][1:]  # Remove the dot
+                if actual_ext:
+                    content_type = get_content_type(actual_ext)
+
+                # Stream the file back
+                with open(download_path, "rb") as f:
+                    while chunk := f.read(8192):  # 8KB chunks
+                        yield chunk
+
+            except Exception as e:
+                logger.error(f"Error in download generator: {e}")
+                error_msg = f"Download failed: {str(e)}"
+                yield error_msg.encode("utf-8")
+            finally:
+                # Clean up temp directory and all files
+                if temp_dir and os.path.exists(temp_dir):
+                    try:
+                        shutil.rmtree(temp_dir)
+                        logger.info(f"Cleaned up temp directory: {temp_dir}")
+                    except Exception as e:
+                        logger.warning(f"Failed to clean up temp directory: {e}")
+
+        # We need to determine the actual filename after download, so let's create a wrapper
+        actual_filename = safe_filename
+        actual_content_type = content_type
+
+        async def filename_aware_generator():
+            nonlocal actual_filename, actual_content_type
+            temp_dir = None
+            try:
+                # Create unique temporary directory for download
+                temp_dir = tempfile.mkdtemp(prefix=f"ytdlp_stream_{task_id}_")
+
+                # Set output template with proper extension and unique ID to prevent conflicts
+                unique_id = str(uuid.uuid4())[:8]  # 8-character unique ID
+                if request.extract_audio:
+                    # For audio extraction, let yt-dlp handle the extension after post-processing
+                    output_template = os.path.join(
+                        temp_dir, f"{sanitize_filename(filename)}_{unique_id}.%(ext)s"
+                    )
+                else:
+                    # For video, use the determined extension with unique ID
+                    base_name, ext = os.path.splitext(safe_filename)
+                    output_template = os.path.join(
+                        temp_dir, f"{base_name}_{unique_id}{ext}"
+                    )
+
+                options["outtmpl"] = output_template
+
+                logger.info(f"Downloading to: {output_template}")
+                logger.info(f"Options: {options}")
+
+                with yt_dlp.YoutubeDL(options) as ydl:
+                    await asyncio.get_running_loop().run_in_executor(
+                        None, lambda: ydl.download([str(validated_url)])
+                    )
+
+                logger.info(
+                    f"Download command completed for temp directory: {temp_dir}"
+                )
+
+                # Find the actual downloaded file(s)
+                downloaded_files = []
+                for file_path in os.listdir(temp_dir):
+                    full_path = os.path.join(temp_dir, file_path)
+                    if os.path.isfile(full_path) and os.path.getsize(full_path) > 0:
+                        downloaded_files.append(full_path)
+
+                logger.info(f"Found {len(downloaded_files)} valid downloaded files")
+                for file_path in downloaded_files:
+                    logger.info(
+                        f"  - {os.path.basename(file_path)}: {os.path.getsize(file_path)} bytes"
+                    )
+
+                if not downloaded_files:
+                    # List all files in directory for debugging
+                    all_files = []
+                    for file_path in os.listdir(temp_dir):
+                        full_path = os.path.join(temp_dir, file_path)
+                        if os.path.isfile(full_path):
+                            all_files.append(
+                                f"{file_path} ({os.path.getsize(full_path)} bytes)"
+                            )
+
+                    logger.error(
+                        f"No valid files downloaded. All files in temp dir: {all_files}"
+                    )
+                    raise Exception(
+                        f"No valid files were downloaded. Found files: {all_files}"
+                    )
+
+                # Use the first (and usually only) downloaded file
+                download_path = downloaded_files[0]
+                actual_filename = os.path.basename(download_path)
+
+                logger.info(
+                    f"Found downloaded file: {actual_filename} ({os.path.getsize(download_path)} bytes)"
+                )
+
+                # Update content type based on actual file
+                actual_ext = os.path.splitext(actual_filename)[1][1:]  # Remove the dot
+                if actual_ext:
+                    actual_content_type = get_content_type(actual_ext)
+
+                # Stream the file back
+                with open(download_path, "rb") as f:
+                    while chunk := f.read(8192):  # 8KB chunks
+                        yield chunk
+
+            except Exception as e:
+                logger.error(f"Error in download: {e}")
+                error_msg = f"Download failed: {str(e)}"
+                yield error_msg.encode("utf-8")
+            finally:
+                # Clean up temp directory and all files
+                if temp_dir and os.path.exists(temp_dir):
+                    try:
+                        shutil.rmtree(temp_dir)
+                        logger.info(f"Cleaned up temp directory: {temp_dir}")
+                    except Exception as e:
+                        logger.warning(f"Failed to clean up temp directory: {e}")
+
+        return StreamingResponse(
+            filename_aware_generator(),
+            media_type=actual_content_type,
+            headers={
+                "Content-Disposition": f'attachment; filename="{actual_filename}"',
+                "Content-Type": actual_content_type,
+            },
+        )
+
+    except Exception as e:
+        logger.exception(f"Error in streaming download {task_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Download failed: {str(e)}")
+
+
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint for monitoring."""
+    # Check disk space (temp directory for streaming)
+    temp_dir = Path(tempfile.gettempdir())
+    download_dir_stat = os.statvfs(temp_dir)
+    free_space_gb = (download_dir_stat.f_frsize * download_dir_stat.f_bavail) / (
+        1024**3
+    )
+
+    # Check if yt-dlp is working
+    ytdlp_healthy = True
+    try:
+        result = subprocess.run(
+            ["yt-dlp", "--version"], capture_output=True, text=True, timeout=5
+        )
+        ytdlp_version = result.stdout.strip() if result.returncode == 0 else "unknown"
+    except Exception:
+        ytdlp_healthy = False
+        ytdlp_version = "error"
+
+    health_status = {
+        "status": "healthy" if ytdlp_healthy and free_space_gb > 1 else "unhealthy",
+        "timestamp": datetime.now().isoformat(),
+        "version": "1.0.1",
+        "mode": "direct_download_only",
+        "ytdlp_version": ytdlp_version,
+        "ytdlp_healthy": ytdlp_healthy,
+        "free_space_gb": round(free_space_gb, 2),
+        "config": {
+            "max_requests_per_minute": settings.max_requests_per_minute,
+            "default_browser": settings.default_browser,
+        },
+    }
+
+    status_code = 200 if health_status["status"] == "healthy" else 503
+    return JSONResponse(content=health_status, status_code=status_code)
+
+
+@app.get("/api/metrics")
+async def get_metrics():
+    """Get application metrics for monitoring."""
+    # Get system info
+    try:
+        import psutil
+
+        cpu_percent = psutil.cpu_percent()
+        memory_info = psutil.virtual_memory()
+        disk_info = psutil.disk_usage(tempfile.gettempdir())
+    except ImportError:
+        # Fallback if psutil not available
+        cpu_percent = None
+        memory_info = None
+        disk_info = None
+
+    metrics = {
+        "timestamp": datetime.now().isoformat(),
+        "mode": "direct_download_only",
+        "system_metrics": {
+            "cpu_percent": cpu_percent,
+            "memory_percent": memory_info.percent if memory_info else None,
+            "memory_used_gb": (
+                round(memory_info.used / (1024**3), 2) if memory_info else None
+            ),
+            "disk_free_gb": round(disk_info.free / (1024**3), 2) if disk_info else None,
+            "disk_used_percent": (
+                round((disk_info.used / disk_info.total) * 100, 1)
+                if disk_info
+                else None
+            ),
+        },
+        "configuration": {
+            "max_requests_per_minute": settings.max_requests_per_minute,
+            "max_file_size_gb": settings.max_file_size_gb,
+            "cleanup_after_days": settings.cleanup_after_days,
+        },
+    }
+
+    return metrics
+
+
+# History endpoint removed - database no longer available
+
+
+# Analytics endpoint removed - database no longer available
+
+
+# Failed downloads endpoint removed - database no longer available
+
+
+# Preferences endpoints removed - database no longer available
 
 
 @app.post("/api/info", response_model=VideoInfoResponse)
@@ -1114,31 +1572,6 @@ async def get_cookie_status():
     )
 
 
-@app.get("/api/cleanup/{days}")
-async def cleanup_old_downloads(days: int = 7):
-    """Clean up downloads older than the specified number of days."""
-    if days < 1:
-        raise HTTPException(status_code=400, detail="Days must be at least 1")
-
-    try:
-        cutoff = time.time() - (days * 24 * 60 * 60)
-        cleaned = 0
-
-        for item in DOWNLOAD_DIR.glob("*"):
-            if item.is_dir() and item.stat().st_mtime < cutoff:
-                for file in item.glob("**/*"):
-                    if file.is_file():
-                        file.unlink()
-                        cleaned += 1
-
-                item.rmdir()  # Remove empty directory
-
-        return {"message": f"Cleaned up {cleaned} old files"}
-    except Exception as e:
-        logger.exception(f"Error during cleanup: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @app.get("/")
 async def root():
     """API root endpoint."""
@@ -1172,8 +1605,20 @@ async def root():
 if __name__ == "__main__":
     import uvicorn
 
-    # Get port and host from environment variables or default values
-    port = int(os.getenv("PORT", 8000))
-    host = os.getenv("HOST", "0.0.0.0")
+    logger.info("Starting YT-DLP API server...")
+    logger.info(f"Debug mode: {settings.debug}")
+    logger.info(f"Allowed origins: {settings.allowed_origins}")
 
-    uvicorn.run(app, host=host, port=port)
+    try:
+        uvicorn.run(
+            app,
+            host=settings.host,
+            port=settings.port,
+            log_level=settings.log_level.lower(),
+            access_log=settings.debug,
+        )
+    except KeyboardInterrupt:
+        logger.info("Received shutdown signal")
+    except Exception as e:
+        logger.error(f"Failed to start server: {e}")
+        raise

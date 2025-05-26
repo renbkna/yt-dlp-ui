@@ -37,4 +37,5 @@ yarn-error.log*
 # System files (common)
 # -------------------------
 .DS_Store
-downloads/
+temp/*
+downloads/*

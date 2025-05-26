@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      :root {
+        /* Light Mode - Kawaii Pastel Theme */
+        --background: #fdf2f8;
+        --foreground: #831843;
+        --card: #fce7f3;
+        --card-foreground: #831843;
+        --primary: #ec4899;
+        --primary-foreground: #fdf2f8;
+        --secondary: #c084fc;
+        --secondary-foreground: #581c87;
+        --muted: #f3e8ff;
+        --muted-foreground: #7c2d12;
+        --accent: #67e8f9;
+        --accent-foreground: #0e7490;
+        --border: #e879f9;
+        --success: #22c55e;
+        --success-foreground: #166534;
+        --info: #3b82f6;
+        --info-foreground: #1e40af;
+        --error: #ef4444;
+        --error-foreground: #dc2626;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          /* Dark Mode - Sewerslvt Depression Theme */
+          --background: #0f0f23;
+          --foreground: #e2e8f0;
+          --card: #1e1e3f;
+          --card-foreground: #e2e8f0;
+          --primary: #e879f9;
+          --primary-foreground: #f8fafc;
+          --secondary: #334155;
+          --secondary-foreground: #e2e8f0;
+          --muted: #1e293b;
+          --muted-foreground: #94a3b8;
+          --accent: #38bdf8;
+          --accent-foreground: #f8fafc;
+          --border: #374151;
+          --success: #22c55e;
+          --success-foreground: #dcfce7;
+          --info: #60a5fa;
+          --info-foreground: #dbeafe;
+          --error: #ef4444;
+          --error-foreground: #fecaca;
+        }
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        width: 320px;
+        min-height: 400px;
+        padding: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+          sans-serif;
+        background: var(--background);
+        color: var(--foreground);
+        transition: all 0.3s ease;
+        line-height: 1.6;
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .logo {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+        position: relative;
+      }
+
+      .logo::before {
+        content: '▶';
+        color: var(--primary-foreground);
+        font-size: 14px;
+        font-weight: bold;
+      }
+
+      h1 {
+        font-size: 18px;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -0.025em;
+      }
+
+      .description {
+        color: var(--muted-foreground);
+        font-size: 14px;
+        margin-bottom: 24px;
+        line-height: 1.5;
+        padding: 16px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        backdrop-filter: blur(8px);
+      }
+
+      .status {
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        border: 1px solid;
+        backdrop-filter: blur(8px);
+        transition: all 0.3s ease;
+      }
+
+      .status.success {
+        background: #dcfce7;
+        color: var(--success-foreground);
+        border-color: #22c55e;
+        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+      }
+
+      .status.info {
+        background: #dbeafe;
+        color: var(--info-foreground);
+        border-color: #3b82f6;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+      }
+
+      .status.error {
+        background: #fecaca;
+        color: var(--error-foreground);
+        border-color: #ef4444;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+      }
+
+      /* Dark mode status colors */
+      @media (prefers-color-scheme: dark) {
+        .status.success {
+          background: rgba(34, 197, 94, 0.1);
+          color: var(--success-foreground);
+          border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .status.info {
+          background: rgba(96, 165, 250, 0.1);
+          color: var(--info-foreground);
+          border-color: rgba(96, 165, 250, 0.3);
+        }
+
+        .status.error {
+          background: rgba(239, 68, 68, 0.1);
+          color: var(--error-foreground);
+          border-color: rgba(239, 68, 68, 0.3);
+        }
+      }
+
+      button {
+        width: 100%;
+        padding: 14px 20px;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        color: var(--primary-foreground);
+        border: none;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+      }
+
+      button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.2),
+          transparent
+        );
+        transition: left 0.5s;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(236, 72, 153, 0.4);
+      }
+
+      button:hover::before {
+        left: 100%;
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: 0 4px 12px rgba(236, 72, 153, 0.2);
+      }
+
+      button:disabled:hover {
+        transform: none;
+      }
+
+      .cookie-count {
+        font-weight: 700;
+        color: var(--primary);
+      }
+
+      .footer {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 12px;
+        color: var(--muted-foreground);
+        border-top: 1px solid var(--border);
+        padding-top: 16px;
+      }
+
+      .footer a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .footer a:hover {
+        text-decoration: underline;
+      }
+
+      /* Style links within status messages */
+      .status a {
+        color: var(--accent);
+        text-decoration: underline;
+        font-weight: 500;
+      }
+
+      .status a:hover {
+        color: var(--primary);
+        text-decoration: none;
+      }
+
+      /* Loading animation */
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.6;
+        }
+      }
+
+      .loading {
+        animation: pulse 2s infinite;
+      }
+
+      /* Subtle background pattern */
+      body::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: radial-gradient(
+          circle at 1px 1px,
+          var(--muted) 1px,
+          transparent 0
+        );
+        background-size: 20px 20px;
+        opacity: 0.1;
+        pointer-events: none;
+        z-index: -1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="logo"></div>
+      <h1>YT-DLP Cookie Helper</h1>
+    </div>
+
+    <div class="description">
+      Extract YouTube cookies for the Ren YT-DLP web app to download
+      age-restricted and premium content.
+    </div>
+
+    <div id="status" class="status info">
+      Click below to extract YouTube cookies
+    </div>
+
+    <button id="extractBtn">Extract YouTube Cookies</button>
+
+    <div class="footer">
+      Part of
+      <a href="https://github.com/renbkna/renytdlp" target="_blank"
+        >Ren YT-DLP</a
+      >
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

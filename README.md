@@ -1,10 +1,13 @@
 # Ren YT-DLP
 
-A sleek web-based interface for downloading videos and audio from YouTube and other platforms using [yt-dlp](https://github.com/yt-dlp/yt-dlp). This project combines a **React** front-end with a **FastAPI** back-end, allowing users to fetch video information, choose formats and additional download options, and monitor download progress in real time.
+A sleek web-based interface for downloading videos and audio from YouTube and other platforms using [yt-dlp](https://github.com/yt-dlp/yt-dlp). This project combines a **React** front-end with a **FastAPI** back-end, providing direct streaming downloads to your device with no server storage required.
 
 ![Ren YT-DLP](/frontend/public/yt-dlp-ui.png)
 
 ## ✨ Features
+
+- **Direct Downloads**
+  Stream downloads directly to your device - no server storage required
 
 - **Video & Playlist Support**
   Download individual videos or entire playlists from YouTube and many other platforms
@@ -30,11 +33,11 @@ A sleek web-based interface for downloading videos and audio from YouTube and ot
 - **SponsorBlock Integration**
   Skip ads, intros, outros, and other segments automatically using SponsorBlock data
 
-- **Accurate Download Progress Tracking**
-  Monitor the progress of downloads with real-time status updates and precise progress indicators
+- **Real-Time Progress**
+  Monitor download progress with live status updates during streaming
 
-- **Client-Side Cookie Extraction**
-  Extract YouTube authentication cookies directly from your browser for age-restricted content
+- **YouTube Authentication Support**
+  Handle age-restricted content and "bot verification" errors with included browser extension or manual cookie import
 
 - **Beautiful Themes**
   Switch between light theme and dark theme
@@ -70,12 +73,11 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-3. Set up environment variables:
+3. Configure settings (optional):
 
 ```bash
-# Copy the example configuration
-cp .env.example .env
-# Edit the .env file as needed
+# Environment variables can be set for customization
+# See config.py for available settings
 ```
 
 ### Set Up the Frontend
@@ -99,6 +101,18 @@ npm install
 cp .env.local.example .env.local
 # Edit the .env.local file as needed
 ```
+
+### Set Up Browser Extension (Optional - For Authentication)
+
+1. Navigate to Chrome/Edge Extensions page:
+   - Chrome: `chrome://extensions/`
+   - Edge: `edge://extensions/`
+
+2. Enable "Developer mode"
+
+3. Click "Load unpacked" and select the `browser-extension/` directory
+
+4. The extension will automatically communicate with the web app for cookie extraction
 
 ## 🏃‍♀️ Running the Application
 
@@ -164,10 +178,10 @@ This project is configured for deployment on Vercel (frontend) and Render (backe
    - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `python main.py`
 
-4. Add environment variables in the Render dashboard:
+4. Configure environment variables in the Render dashboard:
    - Go to service settings > "Environment" section
-   - Add all variables from `.env.example` with production values
-   - Make sure `ALLOWED_ORIGINS` includes your Vercel frontend URL
+   - Set `YTDLP_ALLOWED_ORIGINS` to include your Vercel frontend URL
+   - Configure other settings as needed (see `config.py` for options)
 
 For more detailed deployment instructions, see the README.md files in the frontend and server directories.
 
@@ -187,15 +201,18 @@ For more detailed deployment instructions, see the README.md files in the fronte
    - **Additional Features**: Enable SponsorBlock, cookies, and other advanced features
 
 4. **Authentication for Age-Restricted Content**
+   - **Option 1 - Browser Extension (Recommended)**: Install the included browser extension from the `browser-extension/` directory for automatic cookie extraction
+   - **Option 2 - Manual Import**: Use external tools like "Get cookies.txt LOCALLY" to manually import cookies
    - Enable "Use browser cookies" in the Additional Features section
-   - The application will extract cookies from your browser for authentication
-   - This allows downloading age-restricted content without server-side browser configuration
+   - This allows downloading age-restricted content and bypasses "bot verification" errors
 
 5. **Start Download**
-   Click "Start Download" and monitor progress in real-time with accurate percentage indicators
+   Click "Download Video" or "Download Audio" and the file will stream directly to your device
 
-6. **View Downloaded Files**
-   Once complete, access your files in the downloads folder
+6. **Automatic Downloads**
+   - For individual videos: Downloads start immediately
+   - For playlists: All videos download automatically in sequence
+   - Files are saved directly to your browser's default download location
 
 ## 🎨 Themes
 
@@ -204,11 +221,21 @@ Ren YT-DLP features two beautiful themes:
 - **Light Theme** : A soft, pastel-colored theme with pink and purple accents
 - **Dark Theme** : A dark theme with vibrant neon pink and cyan accents
 
+## 🏗️ Architecture
+
+This application uses a **streamlined architecture** focused on simplicity and performance:
+
+- **Direct Downloads**: Files stream directly from the server to your device - no server storage
+- **Stateless Backend**: No database or persistent storage required
+- **Real-time Processing**: Videos are processed and streamed on-demand
+- **Minimal Resource Usage**: Temporary files are automatically cleaned up
+
 ## 🛠️ Tech Stack
 
 - **Frontend**: React, TypeScript, Tailwind CSS, Framer Motion
 - **Backend**: FastAPI, yt-dlp, Python
 - **Design**: Custom UI components, responsive design
+- **Storage**: No database required - direct streaming architecture
 
 ## 📜 License
 
